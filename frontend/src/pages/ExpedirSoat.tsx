@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { soatAPI } from '../api/soat';
-import { TipoMotoCCEnum } from '../types/index.js';
+import { TipoMotoCCEnum, type TipoMotoCCEnum as TipoMotoCCEnumType } from '../types/index.js';
 import type { Bolsa } from '../types/index.js';
 import { formatCurrency } from '../utils/format';
 
@@ -9,7 +9,13 @@ const SALDO_MINIMO = 2000000; // Umbral para alerta de saldo bajo
 
 const ExpedirSoat: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    placa: string;
+    cedula: string;
+    nombre_propietario: string;
+    tipo_moto: TipoMotoCCEnumType;
+    observaciones: string;
+  }>({
     placa: '',
     cedula: '',
     nombre_propietario: '',
@@ -188,7 +194,7 @@ const ExpedirSoat: React.FC = () => {
               <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Moto *</label>
               <select
                 value={formData.tipo_moto}
-                onChange={(e) => setFormData({ ...formData, tipo_moto: e.target.value as typeof TipoMotoCCEnum[keyof typeof TipoMotoCCEnum] })}
+                onChange={(e) => setFormData({ ...formData, tipo_moto: e.target.value as TipoMotoCCEnumType })}
                 className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               >
                 <option value={TipoMotoCCEnum.HASTA_99CC}>Hasta 99cc - $243,700 + $30,000</option>
