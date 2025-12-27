@@ -50,13 +50,14 @@ const Login: React.FC = () => {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-md">
+              <p className="text-sm font-semibold text-red-800">❌ {error}</p>
             </div>
           )}
-          <div className="rounded-md shadow-sm -space-y-px">
+          
+          <div className="space-y-5">
             <div>
-              <label htmlFor="email" className="sr-only">
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
                 Email
               </label>
               <input
@@ -67,12 +68,13 @@ const Login: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email"
+                className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                placeholder="correo@ejemplo.com"
               />
             </div>
+            
             <div>
-              <label htmlFor="password" className="sr-only">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                 Contraseña
               </label>
               <input
@@ -83,26 +85,20 @@ const Login: React.FC = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Contraseña"
+                className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                placeholder="••••••••"
               />
             </div>
           </div>
 
-          <div>
+          <div className="pt-2">
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
+              className="w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300"
             >
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {loading ? '⏳ Iniciando sesión...' : '🔑 Iniciar Sesión'}
             </button>
-          </div>
-
-          <div className="text-xs text-gray-500 mt-4">
-            <p>Usuarios de prueba:</p>
-            <p>Admin: admin@soat.com / admin123</p>
-            <p>Cliente: hero@holding.com / hero123</p>
           </div>
         </form>
       </div>
