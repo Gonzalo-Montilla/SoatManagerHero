@@ -8,7 +8,6 @@ import * as XLSX from 'xlsx';
 const SALDO_MINIMO = 2000000;
 
 const SoatsList: React.FC = () => {
-  const { isAdmin } = useAuth();
   const [soats, setSoats] = useState<SoatExpedido[]>([]);
   const [bolsa, setBolsa] = useState<Bolsa | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,12 +64,6 @@ const SoatsList: React.FC = () => {
     }
   };
 
-  const handleSubirPoliza = (soat: SoatExpedido) => {
-    setSelectedSoat(soat);
-    setShowPolizaModal(true);
-    setPolizaFile(null);
-    setError('');
-  };
 
   const handlePolizaFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

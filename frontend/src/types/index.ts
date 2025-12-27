@@ -1,12 +1,16 @@
-export enum RolEnum {
-  ADMIN = "admin",
-  CLIENTE = "cliente"
-}
+export const RolEnum = {
+  ADMIN: "admin",
+  CLIENTE: "cliente"
+} as const;
 
-export enum TipoMotoCCEnum {
-  HASTA_99CC = "hasta_99cc",
-  DE_100_200CC = "100_200cc"
-}
+export type RolEnum = typeof RolEnum[keyof typeof RolEnum];
+
+export const TipoMotoCCEnum = {
+  HASTA_99CC: "hasta_99cc",
+  DE_100_200CC: "100_200cc"
+} as const;
+
+export type TipoMotoCCEnum = typeof TipoMotoCCEnum[keyof typeof TipoMotoCCEnum];
 
 export interface Usuario {
   id: number;
