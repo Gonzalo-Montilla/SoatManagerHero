@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { soatAPI } from '../api/soat';
 import type { SoatExpedido, Bolsa } from '../types/index.js';
 import { formatCurrency, formatDate } from '../utils/format';
-import { useAuth } from '../context/AuthContext';
 import * as XLSX from 'xlsx';
 
 const SALDO_MINIMO = 2000000;

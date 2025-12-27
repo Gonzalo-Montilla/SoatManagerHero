@@ -188,7 +188,7 @@ const ExpedirSoat: React.FC = () => {
               <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Moto *</label>
               <select
                 value={formData.tipo_moto}
-                onChange={(e) => setFormData({ ...formData, tipo_moto: e.target.value as TipoMotoCCEnum })}
+                onChange={(e) => setFormData({ ...formData, tipo_moto: e.target.value as typeof TipoMotoCCEnum[keyof typeof TipoMotoCCEnum] })}
                 className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               >
                 <option value={TipoMotoCCEnum.HASTA_99CC}>Hasta 99cc - $243,700 + $30,000</option>
