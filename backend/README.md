@@ -126,8 +126,8 @@ sudo systemctl start soat-backend
 sudo systemctl status soat-backend
 ```
 
-## Tarifas Configuradas
+## Tarifas Configuradas 2026
 
-- Moto hasta 99cc: **$243,700**
-- Moto 100-200cc: **$326,600**
+- Moto hasta 99cc: **$256,200**
+- Moto 100-200cc: **$343,300**
 - Comisión fija: **$30,000**

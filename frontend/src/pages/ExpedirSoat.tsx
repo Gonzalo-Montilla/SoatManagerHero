@@ -197,8 +197,8 @@ const ExpedirSoat: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, tipo_moto: e.target.value as TipoMotoCCEnumType })}
                 className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               >
-                <option value={TipoMotoCCEnum.HASTA_99CC}>Hasta 99cc - $243,700 + $30,000</option>
-                <option value={TipoMotoCCEnum.DE_100_200CC}>100-200cc - $326,600 + $30,000</option>
+                <option value={TipoMotoCCEnum.HASTA_99CC}>Hasta 99cc - $256,200 + $30,000</option>
+                <option value={TipoMotoCCEnum.DE_100_200CC}>100-200cc - $343,300 + $30,000</option>
               </select>
             </div>
 

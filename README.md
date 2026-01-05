@@ -8,9 +8,9 @@ Sistema web para administrar la bolsa prepago de pólizas SOAT, permitiendo el c
 ## Cliente
 Holding Group - Hero
 
-## Tarifas
-- Moto hasta 99cc: $243,700 + Comisión $30,000 = $273,700
-- Moto 100-200cc: $326,600 + Comisión $30,000 = $356,600
+## Tarifas 2026
+- Moto hasta 99cc: $256,200 + Comisión $30,000 = $286,200
+- Moto 100-200cc: $343,300 + Comisión $30,000 = $373,300
 
 ## Tecnologías
 - **Backend**: FastAPI + PostgreSQL

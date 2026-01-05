@@ -18,9 +18,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "SOAT Manager Hero"
     DEBUG: bool = False
     
-    # Tarifas SOAT Holding Group Hero
-    TARIFA_MOTO_HASTA_99CC: int = 243700
-    TARIFA_MOTO_100_200CC: int = 326600
+    # Tarifas SOAT Holding Group Hero - 2026
+    TARIFA_MOTO_HASTA_99CC: int = 256200
+    TARIFA_MOTO_100_200CC: int = 343300
     COMISION_FIJA: int = 30000
     
     @property
