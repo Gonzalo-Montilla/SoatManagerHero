@@ -47,6 +47,22 @@ export const soatAPI = {
     return `${import.meta.env.VITE_API_URL}/api/recargas/${recargaId}/documento-comprobante?token=${token}`;
   },
 
+  uploadComprobanteRecarga: async (recargaId: number, archivo: File): Promise<Recarga> => {
+    const formData = new FormData();
+    formData.append('documento_comprobante', archivo);
+
+    const response = await apiClient.post<Recarga>(
+      `/api/recargas/${recargaId}/upload-comprobante`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
+
   // SOATs
   expedirSoat: async (
     data: SoatExpedidoCreate,

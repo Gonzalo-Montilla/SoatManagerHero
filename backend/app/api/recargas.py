@@ -95,6 +95,58 @@ def listar_recargas(
     return recargas
 
 
+@router.post("/{recarga_id}/upload-comprobante", response_model=RecargaResponse)
+async def upload_comprobante(
+    recarga_id: int,
+    documento_comprobante: UploadFile = File(...),
+    current_user: Usuario = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Subir/actualizar comprobante de una recarga existente.
+    Solo para administradores.
+    """
+    # Buscar recarga
+    recarga = db.query(Recarga).filter(Recarga.id == recarga_id).first()
+    if not recarga:
+        raise HTTPException(status_code=404, detail="Recarga no encontrada")
+    
+    # Validar tipo de archivo
+    allowed_types = ["application/pdf", "image/jpeg", "image/jpg", "image/png"]
+    if documento_comprobante.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="El archivo debe ser PDF, JPG o PNG")
+    
+    # Validar tamaño (10MB max)
+    if documento_comprobante.size and documento_comprobante.size > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="El archivo no debe superar 10MB")
+    
+    # Eliminar archivo anterior si existe
+    if recarga.documento_comprobante and os.path.exists(recarga.documento_comprobante):
+        try:
+            os.remove(recarga.documento_comprobante)
+        except Exception:
+            pass  # Si no se puede eliminar, continuar
+    
+    # Guardar nuevo archivo
+    upload_dir = Path("uploads/recargas")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    timestamp = int(datetime.now().timestamp())
+    extension = documento_comprobante.filename.split('.')[-1]
+    filename = f"{recarga_id}_comprobante_{timestamp}.{extension}"
+    file_path = upload_dir / filename
+    
+    with file_path.open("wb") as buffer:
+        shutil.copyfileobj(documento_comprobante.file, buffer)
+    
+    # Actualizar BD
+    recarga.documento_comprobante = str(file_path)
+    db.commit()
+    db.refresh(recarga)
+    
+    return recarga
+
+
 @router.get("/{recarga_id}/documento-comprobante")
 def descargar_comprobante(
     recarga_id: int,

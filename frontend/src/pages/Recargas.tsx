@@ -12,6 +12,7 @@ const Recargas: React.FC = () => {
   const [itemsPerPage] = useState(10);
   const [showModal, setShowModal] = useState(false);
   const [showComprobanteModal, setShowComprobanteModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedRecarga, setSelectedRecarga] = useState<Recarga | null>(null);
   const [comprobanteUrl, setComprobanteUrl] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -20,7 +21,9 @@ const Recargas: React.FC = () => {
     observaciones: '',
   });
   const [archivo, setArchivo] = useState<File | null>(null);
+  const [archivoUpload, setArchivoUpload] = useState<File | null>(null);
   const [error, setError] = useState('');
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     loadRecargas();
@@ -85,6 +88,45 @@ const Recargas: React.FC = () => {
       setComprobanteUrl(url);
       setSelectedRecarga(recarga);
       setShowComprobanteModal(true);
+    }
+  };
+
+  const handleUploadComprobante = (recarga: Recarga) => {
+    setSelectedRecarga(recarga);
+    setArchivoUpload(null);
+    setUploadError('');
+    setShowUploadModal(true);
+  };
+
+  const handleFileUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        setUploadError('El archivo debe ser PDF, JPG o PNG');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setUploadError('El archivo no debe superar 10MB');
+        return;
+      }
+      setUploadError('');
+      setArchivoUpload(file);
+    }
+  };
+
+  const handleSubmitUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!archivoUpload || !selectedRecarga) return;
+    
+    setUploadError('');
+    try {
+      await soatAPI.uploadComprobanteRecarga(selectedRecarga.id, archivoUpload);
+      setShowUploadModal(false);
+      setArchivoUpload(null);
+      loadRecargas();
+    } catch (err: any) {
+      setUploadError(err.response?.data?.detail || 'Error al subir comprobante');
     }
   };
 
@@ -168,6 +210,14 @@ const Recargas: React.FC = () => {
                         title="Ver Comprobante"
                       >
                         📄 Ver
+                      </button>
+                    ) : isAdmin ? (
+                      <button
+                        onClick={() => handleUploadComprobante(recarga)}
+                        className="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 font-medium transition-colors duration-200"
+                        title="Subir Comprobante"
+                      >
+                        📤 Subir
                       </button>
                     ) : (
                       <span className="text-gray-400 italic">Sin comprobante</span>
@@ -385,6 +435,84 @@ const Recargas: React.FC = () => {
                 >
                   Cerrar
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Subir Comprobante */}
+      {showUploadModal && selectedRecarga && (
+        <div className="fixed z-50 inset-0 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity" onClick={() => setShowUploadModal(false)}></div>
+            
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all max-w-lg w-full z-20">
+              <div className="bg-gradient-to-r from-orange-600 to-orange-700 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-white">📤 Subir Comprobante - Recarga #{selectedRecarga.id}</h3>
+                  <button
+                    onClick={() => setShowUploadModal(false)}
+                    className="text-white hover:text-gray-200 transition-colors"
+                  >
+                    <span className="text-2xl">&times;</span>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="bg-white px-6 py-6">
+                {uploadError && (
+                  <div className="mb-4 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-md">
+                    <p className="text-sm font-semibold text-red-800">❌ {uploadError}</p>
+                  </div>
+                )}
+
+                <div className="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-xl">
+                  <p className="text-sm text-blue-800">
+                    <strong>Monto:</strong> {formatCurrency(selectedRecarga.monto)}<br/>
+                    <strong>Fecha:</strong> {formatDate(selectedRecarga.fecha_recarga)}
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmitUpload} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Comprobante *
+                      <span className="text-gray-500 text-xs ml-2">(PDF, JPG, PNG - Máx. 10MB)</span>
+                    </label>
+                    <input
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/jpg,image/png"
+                      onChange={handleFileUploadChange}
+                      required
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition-all"
+                    />
+                    {archivoUpload && (
+                      <p className="mt-2 text-sm font-medium text-green-600">✓ {archivoUpload.name}</p>
+                    )}
+                  </div>
+
+                  <div className="flex space-x-4 pt-4">
+                    <button
+                      type="submit"
+                      disabled={!archivoUpload}
+                      className="flex-1 bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-xl hover:from-orange-700 hover:to-orange-800 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      📤 Subir Comprobante
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUploadModal(false);
+                        setArchivoUpload(null);
+                        setUploadError('');
+                      }}
+                      className="px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold transition-all duration-200"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
