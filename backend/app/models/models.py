@@ -56,8 +56,8 @@ class SoatExpedido(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     placa = Column(String(20), nullable=False, index=True)
-    cedula = Column(String(20), nullable=False)
-    nombre_propietario = Column(String(255), nullable=False)
+    cedula = Column(String(20), nullable=True)
+    nombre_propietario = Column(String(255), nullable=True)
     tipo_moto = Column(Enum(TipoMotoCCEnum), nullable=False)
     valor_soat = Column(Integer, nullable=False)
     comision = Column(Integer, nullable=False)
