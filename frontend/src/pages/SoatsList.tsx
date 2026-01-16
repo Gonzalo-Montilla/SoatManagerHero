@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { soatAPI } from '../api/soat';
 import type { SoatExpedido, Bolsa } from '../types/index.js';
 import { formatCurrency, formatDate } from '../utils/format';
+import { useAuth } from '../context/AuthContext';
 import * as XLSX from 'xlsx';
 
 const SALDO_MINIMO = 2000000;
 
 const SoatsList: React.FC = () => {
+  const { isAdmin } = useAuth();
   const [soats, setSoats] = useState<SoatExpedido[]>([]);
   const [bolsa, setBolsa] = useState<Bolsa | null>(null);
   const [loading, setLoading] = useState(true);
@@ -15,11 +17,20 @@ const SoatsList: React.FC = () => {
   const [searchPlaca, setSearchPlaca] = useState('');
   const [showPolizaModal, setShowPolizaModal] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedSoat, setSelectedSoat] = useState<SoatExpedido | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string>('');
   const [pdfTitle, setPdfTitle] = useState<string>('');
   const [polizaFile, setPolizaFile] = useState<File | null>(null);
   const [uploadingPoliza, setUploadingPoliza] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    placa: '',
+    cedula: '',
+    nombre_propietario: '',
+    tipo_moto: '',
+    observaciones: ''
+  });
+  const [editingSOAT, setEditingSOAT] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -96,6 +107,38 @@ const SoatsList: React.FC = () => {
       setError(err.response?.data?.detail || 'Error al subir póliza');
     } finally {
       setUploadingPoliza(false);
+    }
+  };
+
+  const handleEditSoat = (soat: SoatExpedido) => {
+    setSelectedSoat(soat);
+    setEditFormData({
+      placa: soat.placa,
+      cedula: soat.cedula || '',
+      nombre_propietario: soat.nombre_propietario || '',
+      tipo_moto: soat.tipo_moto,
+      observaciones: soat.observaciones || ''
+    });
+    setError('');
+    setShowEditModal(true);
+  };
+
+  const handleSubmitEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSoat) return;
+
+    setEditingSOAT(true);
+    setError('');
+
+    try {
+      await soatAPI.actualizarSoat(selectedSoat.id, editFormData);
+      await loadData();
+      setShowEditModal(false);
+      setSelectedSoat(null);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Error al actualizar SOAT');
+    } finally {
+      setEditingSOAT(false);
     }
   };
 
@@ -266,12 +309,17 @@ const SoatsList: React.FC = () => {
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Documentos
               </th>
+              {isAdmin && (
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  Acciones
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {soats.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={isAdmin ? 7 : 6} className="px-6 py-4 text-center text-gray-500">
                   No hay SOATs expedidos
                 </td>
               </tr>
@@ -316,6 +364,17 @@ const SoatsList: React.FC = () => {
                       )}
                     </div>
                   </td>
+                  {isAdmin && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <button
+                        onClick={() => handleEditSoat(soat)}
+                        className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 font-medium transition-colors duration-200"
+                        title="Editar SOAT"
+                      >
+                        ✏️ Editar
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             )}
@@ -483,6 +542,126 @@ const SoatsList: React.FC = () => {
                 >
                   Cancelar
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Editar SOAT */}
+      {showEditModal && selectedSoat && (
+        <div className="fixed z-50 inset-0 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity" onClick={() => setShowEditModal(false)}></div>
+            
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all max-w-2xl w-full z-20 max-h-[90vh] overflow-y-auto">
+              <div className="bg-gradient-to-r from-yellow-600 to-yellow-700 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-white">✏️ Editar SOAT - {selectedSoat.placa}</h3>
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="text-white hover:text-gray-200 transition-colors"
+                  >
+                    <span className="text-2xl">&times;</span>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="bg-white px-6 py-6">
+                {error && (
+                  <div className="mb-4 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-md">
+                    <p className="text-sm font-semibold text-red-800">❌ {error}</p>
+                  </div>
+                )}
+
+                <div className="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-xl">
+                  <p className="text-sm text-blue-800">
+                    <strong>SOAT #:</strong> {selectedSoat.id}<br/>
+                    <strong>Fecha Expedición:</strong> {formatDate(selectedSoat.fecha_expedicion)}<br/>
+                    <strong>Total Actual:</strong> {formatCurrency(selectedSoat.total)}
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmitEdit} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Placa *</label>
+                    <input
+                      type="text"
+                      value={editFormData.placa}
+                      onChange={(e) => setEditFormData({ ...editFormData, placa: e.target.value.toUpperCase() })}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200 font-bold"
+                      required
+                      maxLength={10}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Cédula</label>
+                    <input
+                      type="text"
+                      value={editFormData.cedula}
+                      onChange={(e) => setEditFormData({ ...editFormData, cedula: e.target.value })}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre Propietario</label>
+                    <input
+                      type="text"
+                      value={editFormData.nombre_propietario}
+                      onChange={(e) => setEditFormData({ ...editFormData, nombre_propietario: e.target.value.toUpperCase() })}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Moto *</label>
+                    <select
+                      value={editFormData.tipo_moto}
+                      onChange={(e) => setEditFormData({ ...editFormData, tipo_moto: e.target.value })}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                      required
+                    >
+                      <option value="hasta_99cc">Hasta 99cc - $178,500</option>
+                      <option value="100_200cc">100-200cc - $343,300</option>
+                    </select>
+                    <p className="mt-2 text-xs text-gray-500">
+                      ⚠️ Si cambias el tipo de moto, el sistema ajustará automáticamente el saldo de la bolsa.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Observaciones</label>
+                    <textarea
+                      value={editFormData.observaciones}
+                      onChange={(e) => setEditFormData({ ...editFormData, observaciones: e.target.value })}
+                      rows={3}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
+                    />
+                  </div>
+
+                  <div className="flex space-x-4 pt-4">
+                    <button
+                      type="submit"
+                      disabled={editingSOAT}
+                      className="flex-1 bg-gradient-to-r from-yellow-600 to-yellow-700 text-white px-6 py-3 rounded-xl hover:from-yellow-700 hover:to-yellow-800 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {editingSOAT ? 'Actualizando...' : '✏️ Guardar Cambios'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEditModal(false);
+                        setError('');
+                      }}
+                      disabled={editingSOAT}
+                      className="px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold transition-all duration-200 disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>

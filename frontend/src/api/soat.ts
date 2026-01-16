@@ -102,6 +102,17 @@ export const soatAPI = {
     return response.data;
   },
 
+  actualizarSoat: async (id: number, data: Partial<{
+    placa: string;
+    cedula: string;
+    nombre_propietario: string;
+    tipo_moto: string;
+    observaciones: string;
+  }>): Promise<SoatExpedido> => {
+    const response = await apiClient.put<SoatExpedido>(`/api/soats/${id}`, data);
+    return response.data;
+  },
+
   // Subir póliza
   uploadPoliza: async (soatId: number, documentoPoliza: File): Promise<SoatExpedido> => {
     const formData = new FormData();

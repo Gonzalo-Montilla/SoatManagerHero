@@ -74,6 +74,14 @@ class SoatExpedidoCreate(BaseModel):
     observaciones: Optional[str] = None
 
 
+class SoatExpedidoUpdate(BaseModel):
+    placa: Optional[str] = None
+    cedula: Optional[str] = None
+    nombre_propietario: Optional[str] = None
+    tipo_moto: Optional[TipoMotoCCEnum] = None
+    observaciones: Optional[str] = None
+
+
 class SoatExpedidoResponse(BaseModel):
     id: int
     placa: str

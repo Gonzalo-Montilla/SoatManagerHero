@@ -9,7 +9,7 @@ from pathlib import Path
 from app.core.database import get_db
 from app.core.config import settings
 from app.models.models import SoatExpedido, Bolsa, Usuario, TipoMotoCCEnum
-from app.schemas.schemas import SoatExpedidoCreate, SoatExpedidoResponse
+from app.schemas.schemas import SoatExpedidoCreate, SoatExpedidoResponse, SoatExpedidoUpdate
 from app.api.auth import get_current_user, get_current_admin
 
 router = APIRouter()
@@ -132,6 +132,78 @@ def obtener_soat(
     soat = db.query(SoatExpedido).filter(SoatExpedido.id == soat_id).first()
     if not soat:
         raise HTTPException(status_code=404, detail="SOAT no encontrado")
+    return soat
+
+
+@router.put("/{soat_id}", response_model=SoatExpedidoResponse)
+def actualizar_soat(
+    soat_id: int,
+    soat_data: SoatExpedidoUpdate,
+    current_user: Usuario = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Actualizar datos de un SOAT expedido.
+    Solo para administradores.
+    Ajusta automáticamente el saldo de la bolsa si cambia el tipo de moto.
+    """
+    # Buscar SOAT
+    soat = db.query(SoatExpedido).filter(SoatExpedido.id == soat_id).first()
+    if not soat:
+        raise HTTPException(status_code=404, detail="SOAT no encontrado")
+    
+    # Obtener bolsa
+    bolsa = db.query(Bolsa).first()
+    if not bolsa:
+        raise HTTPException(status_code=400, detail="No hay bolsa inicializada")
+    
+    # Si cambia el tipo de moto, recalcular valores y ajustar bolsa
+    if soat_data.tipo_moto and soat_data.tipo_moto != soat.tipo_moto:
+        # Calcular nuevo valor según tipo
+        if soat_data.tipo_moto == TipoMotoCCEnum.HASTA_99CC:
+            nuevo_valor_soat = settings.TARIFA_MOTO_HASTA_99CC
+        elif soat_data.tipo_moto == TipoMotoCCEnum.DE_100_200CC:
+            nuevo_valor_soat = settings.TARIFA_MOTO_100_200CC
+        else:
+            raise HTTPException(status_code=400, detail="Tipo de moto inválido")
+        
+        comision = settings.COMISION_FIJA
+        nuevo_total = nuevo_valor_soat + comision
+        
+        # Calcular diferencia
+        diferencia = nuevo_total - soat.total
+        
+        # Ajustar bolsa
+        if diferencia > 0:
+            # Se necesita descontar más de la bolsa
+            if bolsa.saldo_actual < diferencia:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Saldo insuficiente para el cambio. Diferencia: ${diferencia:,}, Saldo: ${bolsa.saldo_actual:,}"
+                )
+            bolsa.saldo_actual -= diferencia
+        else:
+            # Se devuelve dinero a la bolsa
+            bolsa.saldo_actual += abs(diferencia)
+        
+        # Actualizar valores del SOAT
+        soat.tipo_moto = soat_data.tipo_moto
+        soat.valor_soat = nuevo_valor_soat
+        soat.total = nuevo_total
+    
+    # Actualizar otros campos
+    if soat_data.placa is not None:
+        soat.placa = soat_data.placa.upper()
+    if soat_data.cedula is not None:
+        soat.cedula = soat_data.cedula.upper() if soat_data.cedula else None
+    if soat_data.nombre_propietario is not None:
+        soat.nombre_propietario = soat_data.nombre_propietario.upper() if soat_data.nombre_propietario else None
+    if soat_data.observaciones is not None:
+        soat.observaciones = soat_data.observaciones
+    
+    db.commit()
+    db.refresh(soat)
+    
     return soat
 
 
