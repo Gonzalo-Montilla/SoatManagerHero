@@ -623,8 +623,8 @@ const SoatsList: React.FC = () => {
                       className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                       required
                     >
-                      <option value="hasta_99cc">Hasta 99cc - $178,500</option>
-                      <option value="100_200cc">100-200cc - $343,300</option>
+                      <option value="hasta_99cc">Hasta 99cc - $286,200</option>
+                      <option value="100_200cc">100-200cc - $373,300</option>
                     </select>
                     <p className="mt-2 text-xs text-gray-500">
                       ⚠️ Si cambias el tipo de moto, el sistema ajustará automáticamente el saldo de la bolsa.
