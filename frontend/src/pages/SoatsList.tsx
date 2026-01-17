@@ -33,7 +33,6 @@ const SoatsList: React.FC = () => {
   const [editingSOAT, setEditingSOAT] = useState(false);
   const [nuevaFactura, setNuevaFactura] = useState<File | null>(null);
   const [nuevoSoat, setNuevoSoat] = useState<File | null>(null);
-  const [uploadingDocs, setUploadingDocs] = useState(false);
   const [error, setError] = useState('');
   const [fileInputKey, setFileInputKey] = useState(0); // Para resetear inputs
 
@@ -143,8 +142,6 @@ const SoatsList: React.FC = () => {
       
       // 2. Reemplazar documentos si hay
       if (nuevaFactura || nuevoSoat) {
-        setUploadingDocs(true);
-        
         if (nuevaFactura) {
           console.log('Reemplazando factura...', nuevaFactura.name);
           try {
@@ -178,7 +175,6 @@ const SoatsList: React.FC = () => {
       setError(err.message || err.response?.data?.detail || 'Error al actualizar SOAT');
     } finally {
       setEditingSOAT(false);
-      setUploadingDocs(false);
     }
   };
 
