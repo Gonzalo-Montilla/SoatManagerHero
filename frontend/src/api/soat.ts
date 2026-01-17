@@ -113,6 +113,38 @@ export const soatAPI = {
     return response.data;
   },
 
+  reemplazarFactura: async (soatId: number, documentoFactura: File): Promise<SoatExpedido> => {
+    const formData = new FormData();
+    formData.append('documento_factura', documentoFactura);
+
+    const response = await apiClient.put<SoatExpedido>(
+      `/api/soats/${soatId}/reemplazar-factura`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
+
+  reemplazarSoat: async (soatId: number, documentoSoat: File): Promise<SoatExpedido> => {
+    const formData = new FormData();
+    formData.append('documento_soat', documentoSoat);
+
+    const response = await apiClient.put<SoatExpedido>(
+      `/api/soats/${soatId}/reemplazar-soat`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
+
   // Subir póliza
   uploadPoliza: async (soatId: number, documentoPoliza: File): Promise<SoatExpedido> => {
     const formData = new FormData();
@@ -133,17 +165,20 @@ export const soatAPI = {
   // Obtener URLs de documentos con token
   getDocumentoFacturaUrl: (soatId: number): string => {
     const token = localStorage.getItem('token');
-    return `${import.meta.env.VITE_API_URL}/api/soats/${soatId}/documento-factura?token=${token}`;
+    const cacheBuster = Date.now();
+    return `${import.meta.env.VITE_API_URL}/api/soats/${soatId}/documento-factura?token=${token}&v=${cacheBuster}`;
   },
 
   getDocumentoSoatUrl: (soatId: number): string => {
     const token = localStorage.getItem('token');
-    return `${import.meta.env.VITE_API_URL}/api/soats/${soatId}/documento-soat?token=${token}`;
+    const cacheBuster = Date.now();
+    return `${import.meta.env.VITE_API_URL}/api/soats/${soatId}/documento-soat?token=${token}&v=${cacheBuster}`;
   },
 
   getDocumentoPolizaUrl: (soatId: number): string => {
     const token = localStorage.getItem('token');
-    return `${import.meta.env.VITE_API_URL}/api/soats/${soatId}/documento-poliza?token=${token}`;
+    const cacheBuster = Date.now();
+    return `${import.meta.env.VITE_API_URL}/api/soats/${soatId}/documento-poliza?token=${token}&v=${cacheBuster}`;
   },
 
   // Dashboard

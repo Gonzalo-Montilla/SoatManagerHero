@@ -207,6 +207,100 @@ def actualizar_soat(
     return soat
 
 
+@router.put("/{soat_id}/reemplazar-factura", response_model=SoatExpedidoResponse)
+async def reemplazar_factura(
+    soat_id: int,
+    documento_factura: UploadFile = File(...),
+    current_user: Usuario = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Reemplazar documento de factura de un SOAT expedido.
+    Solo para administradores.
+    Elimina el archivo anterior y guarda el nuevo.
+    """
+    # Buscar SOAT
+    soat = db.query(SoatExpedido).filter(SoatExpedido.id == soat_id).first()
+    if not soat:
+        raise HTTPException(status_code=404, detail="SOAT no encontrado")
+    
+    # Validar que sea PDF
+    if documento_factura.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="El documento debe ser un PDF")
+    
+    # Eliminar archivo anterior si existe
+    if soat.documento_factura and os.path.exists(soat.documento_factura):
+        try:
+            os.remove(soat.documento_factura)
+        except Exception:
+            pass  # Si no se puede eliminar, continuar
+    
+    # Guardar nuevo archivo
+    upload_dir = Path("uploads/soats")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    timestamp = int(datetime.now().timestamp())
+    factura_filename = f"{soat_id}_factura_{timestamp}.pdf"
+    factura_path = upload_dir / factura_filename
+    
+    with factura_path.open("wb") as buffer:
+        shutil.copyfileobj(documento_factura.file, buffer)
+    
+    # Actualizar BD
+    soat.documento_factura = str(factura_path)
+    db.commit()
+    db.refresh(soat)
+    
+    return soat
+
+
+@router.put("/{soat_id}/reemplazar-soat", response_model=SoatExpedidoResponse)
+async def reemplazar_soat(
+    soat_id: int,
+    documento_soat: UploadFile = File(...),
+    current_user: Usuario = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Reemplazar documento SOAT de un SOAT expedido.
+    Solo para administradores.
+    Elimina el archivo anterior y guarda el nuevo.
+    """
+    # Buscar SOAT
+    soat = db.query(SoatExpedido).filter(SoatExpedido.id == soat_id).first()
+    if not soat:
+        raise HTTPException(status_code=404, detail="SOAT no encontrado")
+    
+    # Validar que sea PDF
+    if documento_soat.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="El documento debe ser un PDF")
+    
+    # Eliminar archivo anterior si existe
+    if soat.documento_soat and os.path.exists(soat.documento_soat):
+        try:
+            os.remove(soat.documento_soat)
+        except Exception:
+            pass  # Si no se puede eliminar, continuar
+    
+    # Guardar nuevo archivo
+    upload_dir = Path("uploads/soats")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    timestamp = int(datetime.now().timestamp())
+    soat_filename = f"{soat_id}_soat_{timestamp}.pdf"
+    soat_path = upload_dir / soat_filename
+    
+    with soat_path.open("wb") as buffer:
+        shutil.copyfileobj(documento_soat.file, buffer)
+    
+    # Actualizar BD
+    soat.documento_soat = str(soat_path)
+    db.commit()
+    db.refresh(soat)
+    
+    return soat
+
+
 @router.post("/{soat_id}/upload-poliza", response_model=SoatExpedidoResponse)
 async def upload_poliza(
     soat_id: int,

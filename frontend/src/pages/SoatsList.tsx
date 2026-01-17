@@ -31,7 +31,11 @@ const SoatsList: React.FC = () => {
     observaciones: ''
   });
   const [editingSOAT, setEditingSOAT] = useState(false);
+  const [nuevaFactura, setNuevaFactura] = useState<File | null>(null);
+  const [nuevoSoat, setNuevoSoat] = useState<File | null>(null);
+  const [uploadingDocs, setUploadingDocs] = useState(false);
   const [error, setError] = useState('');
+  const [fileInputKey, setFileInputKey] = useState(0); // Para resetear inputs
 
   useEffect(() => {
     loadData();
@@ -120,6 +124,9 @@ const SoatsList: React.FC = () => {
       observaciones: soat.observaciones || ''
     });
     setError('');
+    setNuevaFactura(null);
+    setNuevoSoat(null);
+    setFileInputKey(prev => prev + 1); // Resetear inputs
     setShowEditModal(true);
   };
 
@@ -131,14 +138,84 @@ const SoatsList: React.FC = () => {
     setError('');
 
     try {
+      // 1. Actualizar datos
       await soatAPI.actualizarSoat(selectedSoat.id, editFormData);
+      
+      // 2. Reemplazar documentos si hay
+      if (nuevaFactura || nuevoSoat) {
+        setUploadingDocs(true);
+        
+        if (nuevaFactura) {
+          console.log('Reemplazando factura...', nuevaFactura.name);
+          try {
+            await soatAPI.reemplazarFactura(selectedSoat.id, nuevaFactura);
+            console.log('Factura reemplazada exitosamente');
+          } catch (facturaErr: any) {
+            console.error('Error al reemplazar factura:', facturaErr);
+            throw new Error(facturaErr.response?.data?.detail || 'Error al reemplazar factura');
+          }
+        }
+        
+        if (nuevoSoat) {
+          console.log('Reemplazando SOAT...', nuevoSoat.name);
+          try {
+            await soatAPI.reemplazarSoat(selectedSoat.id, nuevoSoat);
+            console.log('SOAT reemplazado exitosamente');
+          } catch (soatErr: any) {
+            console.error('Error al reemplazar SOAT:', soatErr);
+            throw new Error(soatErr.response?.data?.detail || 'Error al reemplazar SOAT');
+          }
+        }
+      }
+      
       await loadData();
       setShowEditModal(false);
       setSelectedSoat(null);
+      setNuevaFactura(null);
+      setNuevoSoat(null);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al actualizar SOAT');
+      console.error('Error en handleSubmitEdit:', err);
+      setError(err.message || err.response?.data?.detail || 'Error al actualizar SOAT');
     } finally {
       setEditingSOAT(false);
+      setUploadingDocs(false);
+    }
+  };
+
+  const handleFacturaFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        setError('El archivo debe ser un PDF');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setError('El archivo no debe superar 10MB');
+        return;
+      }
+      setError('');
+      setNuevaFactura(file);
+    }
+  };
+
+  const handleSoatFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    console.log('handleSoatFileChange llamado, archivo:', file);
+    if (file) {
+      console.log('Tipo de archivo:', file.type, 'Tamaño:', file.size);
+      if (file.type !== 'application/pdf') {
+        console.error('Tipo de archivo inválido:', file.type);
+        setError('El archivo debe ser un PDF');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        console.error('Archivo muy grande:', file.size);
+        setError('El archivo no debe superar 10MB');
+        return;
+      }
+      setError('');
+      setNuevoSoat(file);
+      console.log('Nuevo SOAT guardado en estado:', file.name);
     }
   };
 
@@ -443,13 +520,13 @@ const SoatsList: React.FC = () => {
 
       {/* Modal para Ver PDF */}
       {showPdfModal && (
-        <div className="fixed z-10 inset-0 overflow-y-auto">
+        <div className="fixed z-[60] inset-0 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+              <div className="absolute inset-0 bg-gray-900 opacity-75"></div>
             </div>
 
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full z-[70]">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium text-gray-900">{pdfTitle}</h3>
@@ -552,14 +629,22 @@ const SoatsList: React.FC = () => {
       {showEditModal && selectedSoat && (
         <div className="fixed z-50 inset-0 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity" onClick={() => setShowEditModal(false)}></div>
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity" onClick={() => {
+              setShowEditModal(false);
+              setNuevaFactura(null);
+              setNuevoSoat(null);
+            }}></div>
             
             <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all max-w-2xl w-full z-20 max-h-[90vh] overflow-y-auto">
               <div className="bg-gradient-to-r from-yellow-600 to-yellow-700 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-bold text-white">✏️ Editar SOAT - {selectedSoat.placa}</h3>
                   <button
-                    onClick={() => setShowEditModal(false)}
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setNuevaFactura(null);
+                      setNuevoSoat(null);
+                    }}
                     className="text-white hover:text-gray-200 transition-colors"
                   >
                     <span className="text-2xl">&times;</span>
@@ -641,6 +726,89 @@ const SoatsList: React.FC = () => {
                     />
                   </div>
 
+                  {/* Sección de Reemplazo de Documentos */}
+                  <div className="mt-6 pt-6 border-t-2 border-gray-200">
+                    <h4 className="text-lg font-bold text-gray-800 mb-4">📄 DOCUMENTOS</h4>
+                    
+                    {/* Factura */}
+                    <div className="mb-4 p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-semibold text-gray-700">Factura (PDF)</label>
+                        <div className="flex space-x-2">
+                          {selectedSoat.documento_factura && !nuevaFactura && (
+                            <button
+                              type="button"
+                              onClick={() => handleVerDocumento(selectedSoat, 'factura')}
+                              className="text-xs bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              Ver
+                            </button>
+                          )}
+                          <label className="text-xs bg-yellow-600 text-white px-3 py-1 rounded-lg hover:bg-yellow-700 transition-colors cursor-pointer">
+                            🔄 Reemplazar
+                            <input
+                              key={`factura-${fileInputKey}`}
+                              type="file"
+                              accept="application/pdf"
+                              onChange={handleFacturaFileChange}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      {nuevaFactura ? (
+                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                          <p className="text-sm text-green-700 font-semibold">✓ Nuevo archivo seleccionado:</p>
+                          <p className="text-sm text-gray-700">{nuevaFactura.name}</p>
+                          <p className="text-xs text-gray-500 mt-1">Se reemplazará al guardar cambios</p>
+                        </div>
+                      ) : (
+                        selectedSoat.documento_factura && (
+                          <p className="text-xs text-gray-500 mt-2">Archivo actual: {selectedSoat.documento_factura.split('/').pop()}</p>
+                        )
+                      )}
+                    </div>
+
+                    {/* SOAT */}
+                    <div className="mb-4 p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-semibold text-gray-700">SOAT (PDF)</label>
+                        <div className="flex space-x-2">
+                          {selectedSoat.documento_soat && !nuevoSoat && (
+                            <button
+                              type="button"
+                              onClick={() => handleVerDocumento(selectedSoat, 'soat')}
+                              className="text-xs bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              Ver
+                            </button>
+                          )}
+                          <label className="text-xs bg-yellow-600 text-white px-3 py-1 rounded-lg hover:bg-yellow-700 transition-colors cursor-pointer">
+                            🔄 Reemplazar
+                            <input
+                              key={`soat-${fileInputKey}`}
+                              type="file"
+                              accept="application/pdf"
+                              onChange={handleSoatFileChange}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      {nuevoSoat ? (
+                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                          <p className="text-sm text-green-700 font-semibold">✓ Nuevo archivo seleccionado:</p>
+                          <p className="text-sm text-gray-700">{nuevoSoat.name}</p>
+                          <p className="text-xs text-gray-500 mt-1">Se reemplazará al guardar cambios</p>
+                        </div>
+                      ) : (
+                        selectedSoat.documento_soat && (
+                          <p className="text-xs text-gray-500 mt-2">Archivo actual: {selectedSoat.documento_soat.split('/').pop()}</p>
+                        )
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex space-x-4 pt-4">
                     <button
                       type="submit"
@@ -654,6 +822,8 @@ const SoatsList: React.FC = () => {
                       onClick={() => {
                         setShowEditModal(false);
                         setError('');
+                        setNuevaFactura(null);
+                        setNuevoSoat(null);
                       }}
                       disabled={editingSOAT}
                       className="px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold transition-all duration-200 disabled:opacity-50"
