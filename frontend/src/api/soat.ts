@@ -8,6 +8,8 @@ import type {
   DashboardStats,
 } from '../types/index.js';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 export const soatAPI = {
   // Bolsa
   getSaldo: async (): Promise<Bolsa> => {
@@ -44,7 +46,10 @@ export const soatAPI = {
 
   getDocumentoComprobanteUrl: (recargaId: number): string => {
     const token = localStorage.getItem('token');
-    return `${import.meta.env.VITE_API_URL}/api/recargas/${recargaId}/documento-comprobante?token=${token}`;
+    const params = new URLSearchParams();
+    if (token) params.set('token', token);
+    params.set('v', Date.now().toString());
+    return `${API_URL}/api/recargas/${recargaId}/documento-comprobante?${params.toString()}`;
   },
 
   uploadComprobanteRecarga: async (recargaId: number, archivo: File): Promise<Recarga> => {
@@ -165,20 +170,26 @@ export const soatAPI = {
   // Obtener URLs de documentos con token
   getDocumentoFacturaUrl: (soatId: number): string => {
     const token = localStorage.getItem('token');
-    const cacheBuster = Date.now();
-    return `${import.meta.env.VITE_API_URL}/api/soats/${soatId}/documento-factura?token=${token}&v=${cacheBuster}`;
+    const params = new URLSearchParams();
+    if (token) params.set('token', token);
+    params.set('v', Date.now().toString());
+    return `${API_URL}/api/soats/${soatId}/documento-factura?${params.toString()}`;
   },
 
   getDocumentoSoatUrl: (soatId: number): string => {
     const token = localStorage.getItem('token');
-    const cacheBuster = Date.now();
-    return `${import.meta.env.VITE_API_URL}/api/soats/${soatId}/documento-soat?token=${token}&v=${cacheBuster}`;
+    const params = new URLSearchParams();
+    if (token) params.set('token', token);
+    params.set('v', Date.now().toString());
+    return `${API_URL}/api/soats/${soatId}/documento-soat?${params.toString()}`;
   },
 
   getDocumentoPolizaUrl: (soatId: number): string => {
     const token = localStorage.getItem('token');
-    const cacheBuster = Date.now();
-    return `${import.meta.env.VITE_API_URL}/api/soats/${soatId}/documento-poliza?token=${token}&v=${cacheBuster}`;
+    const params = new URLSearchParams();
+    if (token) params.set('token', token);
+    params.set('v', Date.now().toString());
+    return `${API_URL}/api/soats/${soatId}/documento-poliza?${params.toString()}`;
   },
 
   // Dashboard

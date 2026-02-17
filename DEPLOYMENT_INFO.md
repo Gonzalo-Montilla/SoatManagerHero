@@ -12,7 +12,7 @@
 - **IP**: 31.97.144.9
 - **OS**: Ubuntu 24.04 LTS
 - **SSH**: `ssh root@31.97.144.9`
-- **Contraseña**: Chalomontilla@1721
+- **Contraseña**: [CONFIGURAR EN GESTOR DE SECRETOS]
 
 ### Recursos
 - **Disco**: 48GB (41GB libres)
@@ -79,7 +79,7 @@
 ### PostgreSQL
 - **Database**: soat_manager_db
 - **Usuario**: soat_user
-- **Contraseña**: SoatHero2025
+- **Contraseña**: [CONFIGURAR EN GESTOR DE SECRETOS]
 - **Host**: localhost
 - **Puerto**: 5432
 
@@ -193,8 +193,8 @@ systemctl restart nginx     # Reiniciar Nginx
 
 ### Backend (.env)
 ```env
-DATABASE_URL=postgresql://soat_user:SoatHero2025@localhost/soat_manager_db
-SECRET_KEY=soat-hero-secret-key-production-2025-change-this
+DATABASE_URL=postgresql://soat_user:[DB_PASSWORD]@localhost/soat_manager_db
+SECRET_KEY=[CONFIGURAR_SECRET_KEY_SEGURA]
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```

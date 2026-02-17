@@ -39,6 +39,9 @@ yarn-error.log*
 *.sqlite
 *.sqlite3
 
+# Local uploads (no versionar archivos subidos)
+backend/uploads/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api/client';
 import { formatDate } from '../utils/format';
 
 interface Usuario {
@@ -19,7 +19,7 @@ const Usuarios: React.FC = () => {
     email: '',
     nombre_completo: '',
     password: '',
-    rol: 'CLIENTE',
+    rol: 'cliente',
   });
   const [error, setError] = useState('');
 
@@ -29,13 +29,19 @@ const Usuarios: React.FC = () => {
 
   const loadUsuarios = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/usuarios/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUsuarios(response.data);
-    } catch (error) {
+      const response = await apiClient.get('/api/usuarios/');
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setUsuarios(data);
+        setError('');
+      } else {
+        setUsuarios([]);
+        setError('No se pudo cargar la lista de usuarios');
+      }
+    } catch (error: any) {
       console.error('Error al cargar usuarios:', error);
+      setUsuarios([]);
+      setError(error.response?.data?.detail || 'Error al cargar usuarios');
     } finally {
       setLoading(false);
     }
@@ -46,15 +52,10 @@ const Usuarios: React.FC = () => {
     setError('');
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/usuarios/`,
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await apiClient.post('/api/usuarios/', formData);
       
       setShowModal(false);
-      setFormData({ email: '', nombre_completo: '', password: '', rol: 'CLIENTE' });
+      setFormData({ email: '', nombre_completo: '', password: '', rol: 'cliente' });
       loadUsuarios();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Error al crear usuario');
@@ -63,12 +64,7 @@ const Usuarios: React.FC = () => {
 
   const toggleActivo = async (usuarioId: number) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(
-        `${import.meta.env.VITE_API_URL}/api/usuarios/${usuarioId}/toggle-activo`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await apiClient.put(`/api/usuarios/${usuarioId}/toggle-activo`, {});
       loadUsuarios();
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Error al cambiar estado del usuario');
@@ -134,7 +130,7 @@ const Usuarios: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className={`px-3 py-1 rounded-full font-semibold ${
-                        usuario.rol === 'ADMIN' 
+                        usuario.rol === 'admin' 
                           ? 'bg-purple-100 text-purple-700' 
                           : 'bg-blue-100 text-blue-700'
                       }`}>
@@ -244,8 +240,8 @@ const Usuarios: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
                       className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     >
-                      <option value="CLIENTE">Cliente</option>
-                      <option value="ADMIN">Administrador</option>
+                      <option value="cliente">Cliente</option>
+                      <option value="admin">Administrador</option>
                     </select>
                   </div>
 

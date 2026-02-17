@@ -7,12 +7,33 @@ import os
 import shutil
 from pathlib import Path
 from app.core.database import get_db
-from app.core.config import settings
+from app.core.finanzas import calcular_detalle_soat
 from app.models.models import SoatExpedido, Bolsa, Usuario, TipoMotoCCEnum
 from app.schemas.schemas import SoatExpedidoCreate, SoatExpedidoResponse, SoatExpedidoUpdate
-from app.api.auth import get_current_user, get_current_admin
+from app.api.auth import get_current_user, get_current_admin, get_current_user_from_request
 
 router = APIRouter()
+
+
+def _get_upload_size(file: UploadFile) -> int:
+    file.file.seek(0, os.SEEK_END)
+    size = file.file.tell()
+    file.file.seek(0)
+    return size
+
+
+def _validar_pdf(file: UploadFile, field_name: str):
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail=f"El documento de {field_name} debe ser un PDF")
+
+    size = _get_upload_size(file)
+    if size > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail=f"El documento de {field_name} no debe superar 10MB")
+
+    header = file.file.read(5)
+    file.file.seek(0)
+    if header != b"%PDF-":
+        raise HTTPException(status_code=400, detail=f"El archivo PDF de {field_name} es inválido")
 
 
 @router.post("/", response_model=SoatExpedidoResponse)
@@ -31,79 +52,74 @@ async def expedir_soat(
     Expedir un nuevo SOAT con documentos PDF.
     Solo para administradores.
     """
-    # Validar que los archivos sean PDFs
-    if documento_factura.content_type != "application/pdf":
-        raise HTTPException(status_code=400, detail="El documento de factura debe ser un PDF")
-    if documento_soat.content_type != "application/pdf":
-        raise HTTPException(status_code=400, detail="El documento SOAT debe ser un PDF")
+    # Validar que los archivos sean PDFs válidos
+    _validar_pdf(documento_factura, "factura")
+    _validar_pdf(documento_soat, "SOAT")
     
-    # Determinar valor del SOAT según tipo
-    if tipo_moto == TipoMotoCCEnum.HASTA_99CC:
-        valor_soat = settings.TARIFA_MOTO_HASTA_99CC
-    elif tipo_moto == TipoMotoCCEnum.DE_100_200CC:
-        valor_soat = settings.TARIFA_MOTO_100_200CC
-    else:
+    try:
+        valor_soat, comision, total = calcular_detalle_soat(tipo_moto)
+    except ValueError:
         raise HTTPException(status_code=400, detail="Tipo de moto inválido")
-    
-    comision = settings.COMISION_FIJA
-    total = valor_soat + comision
     
     # Verificar saldo en bolsa
     bolsa = db.query(Bolsa).first()
     if not bolsa:
         raise HTTPException(status_code=400, detail="No hay bolsa inicializada")
     
-    if bolsa.saldo_actual < total:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Saldo insuficiente. Saldo actual: ${bolsa.saldo_actual:,}, Requerido: ${total:,}"
+    # Operación atómica: saldo + registro + archivos
+    factura_path = None
+    soat_path = None
+    try:
+        # Descontar de la bolsa
+        bolsa.saldo_actual -= total
+
+        # Crear registro de SOAT expedido
+        db_soat = SoatExpedido(
+            placa=placa.upper(),
+            cedula=cedula.upper() if cedula else None,
+            nombre_propietario=nombre_propietario.upper() if nombre_propietario else None,
+            tipo_moto=tipo_moto,
+            valor_soat=valor_soat,
+            comision=comision,
+            total=total,
+            observaciones=observaciones,
+            usuario_registro_id=current_user.id
         )
-    
-    # Descontar de la bolsa
-    bolsa.saldo_actual -= total
-    
-    # Crear registro de SOAT expedido (sin documentos aún)
-    db_soat = SoatExpedido(
-        placa=placa.upper(),
-        cedula=cedula.upper() if cedula else None,
-        nombre_propietario=nombre_propietario.upper() if nombre_propietario else None,
-        tipo_moto=tipo_moto,
-        valor_soat=valor_soat,
-        comision=comision,
-        total=total,
-        observaciones=observaciones,
-        usuario_registro_id=current_user.id
-    )
-    
-    db.add(db_soat)
-    db.commit()
-    db.refresh(db_soat)
-    
-    # Guardar archivos PDF
-    upload_dir = Path("uploads/soats")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    
-    timestamp = int(datetime.now().timestamp())
-    
-    # Guardar factura
-    factura_filename = f"{db_soat.id}_factura_{timestamp}.pdf"
-    factura_path = upload_dir / factura_filename
-    with factura_path.open("wb") as buffer:
-        shutil.copyfileobj(documento_factura.file, buffer)
-    
-    # Guardar SOAT
-    soat_filename = f"{db_soat.id}_soat_{timestamp}.pdf"
-    soat_path = upload_dir / soat_filename
-    with soat_path.open("wb") as buffer:
-        shutil.copyfileobj(documento_soat.file, buffer)
-    
-    # Actualizar rutas en BD
-    db_soat.documento_factura = str(factura_path)
-    db_soat.documento_soat = str(soat_path)
-    db.commit()
-    db.refresh(db_soat)
-    
-    return db_soat
+
+        db.add(db_soat)
+        db.flush()
+
+        # Guardar archivos PDF
+        upload_dir = Path("uploads/soats")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = int(datetime.now().timestamp())
+
+        factura_filename = f"{db_soat.id}_factura_{timestamp}.pdf"
+        factura_path = upload_dir / factura_filename
+        with factura_path.open("wb") as buffer:
+            shutil.copyfileobj(documento_factura.file, buffer)
+
+        soat_filename = f"{db_soat.id}_soat_{timestamp}.pdf"
+        soat_path = upload_dir / soat_filename
+        with soat_path.open("wb") as buffer:
+            shutil.copyfileobj(documento_soat.file, buffer)
+
+        db_soat.documento_factura = str(factura_path)
+        db_soat.documento_soat = str(soat_path)
+
+        db.commit()
+        db.refresh(db_soat)
+        return db_soat
+    except Exception:
+        db.rollback()
+        for file_path in (factura_path, soat_path):
+            if file_path and file_path.exists():
+                try:
+                    file_path.unlink()
+                except OSError:
+                    pass
+        raise
 
 
 @router.get("/", response_model=List[SoatExpedidoResponse])
@@ -159,28 +175,17 @@ def actualizar_soat(
     
     # Si cambia el tipo de moto, recalcular valores y ajustar bolsa
     if soat_data.tipo_moto and soat_data.tipo_moto != soat.tipo_moto:
-        # Calcular nuevo valor según tipo
-        if soat_data.tipo_moto == TipoMotoCCEnum.HASTA_99CC:
-            nuevo_valor_soat = settings.TARIFA_MOTO_HASTA_99CC
-        elif soat_data.tipo_moto == TipoMotoCCEnum.DE_100_200CC:
-            nuevo_valor_soat = settings.TARIFA_MOTO_100_200CC
-        else:
+        try:
+            nuevo_valor_soat, nueva_comision, nuevo_total = calcular_detalle_soat(soat_data.tipo_moto)
+        except ValueError:
             raise HTTPException(status_code=400, detail="Tipo de moto inválido")
-        
-        comision = settings.COMISION_FIJA
-        nuevo_total = nuevo_valor_soat + comision
         
         # Calcular diferencia
         diferencia = nuevo_total - soat.total
         
         # Ajustar bolsa
         if diferencia > 0:
-            # Se necesita descontar más de la bolsa
-            if bolsa.saldo_actual < diferencia:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Saldo insuficiente para el cambio. Diferencia: ${diferencia:,}, Saldo: ${bolsa.saldo_actual:,}"
-                )
+            # Se necesita descontar más de la bolsa (puede quedar en negativo)
             bolsa.saldo_actual -= diferencia
         else:
             # Se devuelve dinero a la bolsa
@@ -189,6 +194,7 @@ def actualizar_soat(
         # Actualizar valores del SOAT
         soat.tipo_moto = soat_data.tipo_moto
         soat.valor_soat = nuevo_valor_soat
+        soat.comision = nueva_comision
         soat.total = nuevo_total
     
     # Actualizar otros campos
@@ -225,8 +231,7 @@ async def reemplazar_factura(
         raise HTTPException(status_code=404, detail="SOAT no encontrado")
     
     # Validar que sea PDF
-    if documento_factura.content_type != "application/pdf":
-        raise HTTPException(status_code=400, detail="El documento debe ser un PDF")
+    _validar_pdf(documento_factura, "factura")
     
     # Eliminar archivo anterior si existe
     if soat.documento_factura and os.path.exists(soat.documento_factura):
@@ -272,8 +277,7 @@ async def reemplazar_soat(
         raise HTTPException(status_code=404, detail="SOAT no encontrado")
     
     # Validar que sea PDF
-    if documento_soat.content_type != "application/pdf":
-        raise HTTPException(status_code=400, detail="El documento debe ser un PDF")
+    _validar_pdf(documento_soat, "SOAT")
     
     # Eliminar archivo anterior si existe
     if soat.documento_soat and os.path.exists(soat.documento_soat):
@@ -318,8 +322,7 @@ async def upload_poliza(
         raise HTTPException(status_code=404, detail="SOAT no encontrado")
     
     # Validar que sea PDF
-    if documento_poliza.content_type != "application/pdf":
-        raise HTTPException(status_code=400, detail="El documento debe ser un PDF")
+    _validar_pdf(documento_poliza, "póliza")
     
     # Guardar archivo
     upload_dir = Path("uploads/soats")
@@ -343,22 +346,13 @@ async def upload_poliza(
 @router.get("/{soat_id}/documento-factura")
 def descargar_factura(
     soat_id: int,
-    token: str = None,
+    current_user: Usuario = Depends(get_current_user_from_request),
     db: Session = Depends(get_db)
 ):
     """
     Descargar PDF de factura de un SOAT.
     Disponible para admin y cliente.
     """
-    # Validar token
-    if not token:
-        raise HTTPException(status_code=401, detail="Token requerido")
-    
-    from app.core.security import decode_access_token
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Token inválido")
-    
     soat = db.query(SoatExpedido).filter(SoatExpedido.id == soat_id).first()
     if not soat:
         raise HTTPException(status_code=404, detail="SOAT no encontrado")
@@ -378,22 +372,13 @@ def descargar_factura(
 @router.get("/{soat_id}/documento-soat")
 def descargar_soat(
     soat_id: int,
-    token: str = None,
+    current_user: Usuario = Depends(get_current_user_from_request),
     db: Session = Depends(get_db)
 ):
     """
     Descargar PDF del SOAT expedido.
     Disponible para admin y cliente.
     """
-    # Validar token
-    if not token:
-        raise HTTPException(status_code=401, detail="Token requerido")
-    
-    from app.core.security import decode_access_token
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Token inválido")
-    
     soat = db.query(SoatExpedido).filter(SoatExpedido.id == soat_id).first()
     if not soat:
         raise HTTPException(status_code=404, detail="SOAT no encontrado")
@@ -413,22 +398,13 @@ def descargar_soat(
 @router.get("/{soat_id}/documento-poliza")
 def descargar_poliza(
     soat_id: int,
-    token: str = None,
+    current_user: Usuario = Depends(get_current_user_from_request),
     db: Session = Depends(get_db)
 ):
     """
     Descargar PDF de póliza de un SOAT.
     Disponible para admin y cliente.
     """
-    # Validar token
-    if not token:
-        raise HTTPException(status_code=401, detail="Token requerido")
-    
-    from app.core.security import decode_access_token
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Token inválido")
-    
     soat = db.query(SoatExpedido).filter(SoatExpedido.id == soat_id).first()
     if not soat:
         raise HTTPException(status_code=404, detail="SOAT no encontrado")

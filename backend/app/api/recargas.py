@@ -9,9 +9,53 @@ from pathlib import Path
 from app.core.database import get_db
 from app.models.models import Recarga, Bolsa, Usuario
 from app.schemas.schemas import RecargaCreate, RecargaResponse
-from app.api.auth import get_current_admin, get_current_user
+from app.api.auth import get_current_admin, get_current_user, get_current_user_from_request
 
 router = APIRouter()
+
+
+def _get_upload_size(file: UploadFile) -> int:
+    file.file.seek(0, os.SEEK_END)
+    size = file.file.tell()
+    file.file.seek(0)
+    return size
+
+
+def _is_pdf(file: UploadFile) -> bool:
+    header = file.file.read(5)
+    file.file.seek(0)
+    return header == b"%PDF-"
+
+
+def _is_jpeg(file: UploadFile) -> bool:
+    header = file.file.read(3)
+    file.file.seek(0)
+    return header == b"\xff\xd8\xff"
+
+
+def _is_png(file: UploadFile) -> bool:
+    header = file.file.read(8)
+    file.file.seek(0)
+    return header == b"\x89PNG\r\n\x1a\n"
+
+
+def _validar_comprobante(file: UploadFile):
+    allowed_types = {"application/pdf", "image/jpeg", "image/jpg", "image/png"}
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="El archivo debe ser PDF, JPG o PNG")
+
+    size = _get_upload_size(file)
+    if size > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="El archivo no debe superar 10MB")
+
+    if file.content_type == "application/pdf" and not _is_pdf(file):
+        raise HTTPException(status_code=400, detail="El archivo PDF es inválido")
+
+    if file.content_type in {"image/jpeg", "image/jpg"} and not _is_jpeg(file):
+        raise HTTPException(status_code=400, detail="La imagen JPG es inválida")
+
+    if file.content_type == "image/png" and not _is_png(file):
+        raise HTTPException(status_code=400, detail="La imagen PNG es inválida")
 
 
 @router.post("/", response_model=RecargaResponse)
@@ -28,58 +72,63 @@ async def crear_recarga(
     Solo para administradores.
     """
     # Validar archivo si se proporcionó
-    documento_path = None
     if documento_comprobante:
-        # Validar tipo de archivo (PDF o imágenes)
-        allowed_types = ["application/pdf", "image/jpeg", "image/jpg", "image/png"]
-        if documento_comprobante.content_type not in allowed_types:
-            raise HTTPException(status_code=400, detail="El archivo debe ser PDF, JPG o PNG")
-        
-        # Validar tamaño (10MB max)
-        if documento_comprobante.size and documento_comprobante.size > 10 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="El archivo no debe superar 10MB")
-    
-    # Obtener o crear bolsa
-    bolsa = db.query(Bolsa).first()
-    if not bolsa:
-        bolsa = Bolsa(saldo_actual=0)
-        db.add(bolsa)
-        db.commit()
-        db.refresh(bolsa)
-    
-    # Actualizar saldo de la bolsa
-    bolsa.saldo_actual += monto
-    
-    # Crear registro de recarga
-    db_recarga = Recarga(
-        monto=monto,
-        referencia=referencia,
-        observaciones=observaciones,
-        usuario_registro_id=current_user.id
-    )
-    
-    db.add(db_recarga)
-    db.commit()
-    db.refresh(db_recarga)
-    
-    # Guardar archivo si existe
-    if documento_comprobante:
-        upload_dir = Path("uploads/recargas")
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        
-        timestamp = int(datetime.now().timestamp())
-        extension = documento_comprobante.filename.split('.')[-1]
-        filename = f"{db_recarga.id}_comprobante_{timestamp}.{extension}"
-        file_path = upload_dir / filename
-        
-        with file_path.open("wb") as buffer:
-            shutil.copyfileobj(documento_comprobante.file, buffer)
-        
-        db_recarga.documento_comprobante = str(file_path)
+        _validar_comprobante(documento_comprobante)
+
+    if monto <= 0:
+        raise HTTPException(status_code=400, detail="El monto debe ser mayor a cero")
+
+    saved_file_path = None
+    try:
+        # Obtener o crear bolsa
+        bolsa = db.query(Bolsa).first()
+        if not bolsa:
+            bolsa = Bolsa(saldo_actual=0)
+            db.add(bolsa)
+            db.flush()
+
+        # Actualizar saldo de la bolsa
+        bolsa.saldo_actual += monto
+
+        # Crear registro de recarga
+        db_recarga = Recarga(
+            monto=monto,
+            referencia=referencia,
+            observaciones=observaciones,
+            usuario_registro_id=current_user.id
+        )
+
+        db.add(db_recarga)
+        db.flush()
+
+        # Guardar archivo si existe
+        if documento_comprobante:
+            upload_dir = Path("uploads/recargas")
+            upload_dir.mkdir(parents=True, exist_ok=True)
+
+            timestamp = int(datetime.now().timestamp())
+            extension = Path(documento_comprobante.filename or "comprobante.pdf").suffix.lower().lstrip(".")
+            extension = extension if extension in {"pdf", "jpg", "jpeg", "png"} else "pdf"
+            filename = f"{db_recarga.id}_comprobante_{timestamp}.{extension}"
+            file_path = upload_dir / filename
+
+            with file_path.open("wb") as buffer:
+                shutil.copyfileobj(documento_comprobante.file, buffer)
+
+            saved_file_path = file_path
+            db_recarga.documento_comprobante = str(file_path)
+
         db.commit()
         db.refresh(db_recarga)
-    
-    return db_recarga
+        return db_recarga
+    except Exception:
+        db.rollback()
+        if saved_file_path and saved_file_path.exists():
+            try:
+                saved_file_path.unlink()
+            except OSError:
+                pass
+        raise
 
 
 @router.get("/", response_model=List[RecargaResponse])
@@ -111,14 +160,7 @@ async def upload_comprobante(
     if not recarga:
         raise HTTPException(status_code=404, detail="Recarga no encontrada")
     
-    # Validar tipo de archivo
-    allowed_types = ["application/pdf", "image/jpeg", "image/jpg", "image/png"]
-    if documento_comprobante.content_type not in allowed_types:
-        raise HTTPException(status_code=400, detail="El archivo debe ser PDF, JPG o PNG")
-    
-    # Validar tamaño (10MB max)
-    if documento_comprobante.size and documento_comprobante.size > 10 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="El archivo no debe superar 10MB")
+    _validar_comprobante(documento_comprobante)
     
     # Eliminar archivo anterior si existe
     if recarga.documento_comprobante and os.path.exists(recarga.documento_comprobante):
@@ -150,22 +192,13 @@ async def upload_comprobante(
 @router.get("/{recarga_id}/documento-comprobante")
 def descargar_comprobante(
     recarga_id: int,
-    token: str = None,
+    current_user: Usuario = Depends(get_current_user_from_request),
     db: Session = Depends(get_db)
 ):
     """
     Descargar/visualizar comprobante de una recarga.
     Disponible para administradores.
     """
-    # Validar token
-    if not token:
-        raise HTTPException(status_code=401, detail="Token requerido")
-    
-    from app.core.security import decode_access_token
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Token inválido")
-    
     recarga = db.query(Recarga).filter(Recarga.id == recarga_id).first()
     if not recarga:
         raise HTTPException(status_code=404, detail="Recarga no encontrada")

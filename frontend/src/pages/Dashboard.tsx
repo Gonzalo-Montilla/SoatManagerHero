@@ -38,18 +38,27 @@ const Dashboard: React.FC = () => {
     return <div className="text-center py-10">Cargando...</div>;
   }
 
+  const saldoActual = bolsa?.saldo_actual ?? 0;
+  const saldoNegativo = saldoActual < 0;
+
   return (
     <div className="px-4 py-6">
       <h1 className="text-4xl font-bold text-gray-900 mb-8 text-center tracking-tight">Dashboard</h1>
 
       {/* Saldo de Bolsa */}
-      <div className="bg-gradient-to-br from-blue-500 to-blue-600 overflow-hidden shadow-xl rounded-2xl mb-8 transform hover:scale-[1.02] transition-all duration-300">
+      <div className={`overflow-hidden shadow-xl rounded-2xl mb-8 transform hover:scale-[1.02] transition-all duration-300 ${
+        saldoNegativo
+          ? 'bg-gradient-to-br from-red-600 to-red-700'
+          : 'bg-gradient-to-br from-blue-500 to-blue-600'
+      }`}>
         <div className="p-8">
           <div className="flex items-center">
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-blue-100 uppercase tracking-wide">Saldo en Bolsa</h3>
+              <h3 className={`text-lg font-semibold uppercase tracking-wide ${
+                saldoNegativo ? 'text-red-100' : 'text-blue-100'
+              }`}>Saldo en Bolsa</h3>
               <p className="text-5xl font-bold text-white mt-3">
-                {bolsa ? formatCurrency(bolsa.saldo_actual) : '$0'}
+                {formatCurrency(saldoActual)}
               </p>
             </div>
             <div className="bg-white bg-opacity-20 rounded-full p-4">
@@ -60,6 +69,14 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {saldoNegativo && (
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-5 mb-8 rounded-r-xl shadow-md">
+          <p className="text-sm font-semibold text-red-800">
+            <strong>Saldo en negativo:</strong> la bolsa está en {formatCurrency(saldoActual)}. Se permite seguir registrando consumos, pero se recomienda recargar lo antes posible.
+          </p>
+        </div>
+      )}
 
       {/* Estadísticas Admin */}
       {isAdmin && stats && (

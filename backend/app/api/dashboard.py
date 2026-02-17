@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, date
 from app.core.database import get_db
+from app.core.finanzas import calcular_conciliacion_saldo
 from app.models.models import Bolsa, SoatExpedido, Recarga, Usuario
 from app.schemas.schemas import DashboardStats
 from app.api.auth import get_current_admin
@@ -45,3 +46,16 @@ def get_dashboard_stats(
         "total_recargas": total_recargas,
         "soats_hoy": soats_hoy or 0
     }
+
+
+@router.get("/conciliacion")
+def get_conciliacion_saldo(
+    current_user: Usuario = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Verifica si el saldo guardado en bolsa cuadra contra:
+    sum(recargas) - sum(consumos SOAT).
+    Solo para administradores.
+    """
+    return calcular_conciliacion_saldo(db)

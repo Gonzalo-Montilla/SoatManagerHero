@@ -93,19 +93,28 @@ const ExpedirSoat: React.FC = () => {
     }
   };
 
+  const saldoActual = bolsa?.saldo_actual ?? 0;
+  const saldoNegativo = saldoActual < 0;
+
   return (
     <div className="px-4 py-6 max-w-4xl mx-auto">
       <h1 className="text-4xl font-bold text-gray-900 mb-8 text-center tracking-tight">Expedir SOAT</h1>
 
       {/* Tarjeta de Saldo */}
       {bolsa && (
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 overflow-hidden shadow-xl rounded-2xl mb-6 max-w-2xl mx-auto transform hover:scale-[1.02] transition-all duration-300">
+        <div className={`overflow-hidden shadow-xl rounded-2xl mb-6 max-w-2xl mx-auto transform hover:scale-[1.02] transition-all duration-300 ${
+          saldoNegativo
+            ? 'bg-gradient-to-br from-red-600 to-red-700'
+            : 'bg-gradient-to-br from-blue-500 to-blue-600'
+        }`}>
           <div className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-blue-100 uppercase tracking-wide">Saldo en Bolsa</h3>
+                <h3 className={`text-sm font-semibold uppercase tracking-wide ${
+                  saldoNegativo ? 'text-red-100' : 'text-blue-100'
+                }`}>Saldo en Bolsa</h3>
                 <p className="text-4xl font-bold text-white mt-2">
-                  {formatCurrency(bolsa.saldo_actual)}
+                  {formatCurrency(saldoActual)}
                 </p>
               </div>
               <div className="bg-white bg-opacity-20 rounded-full p-3">
@@ -118,8 +127,28 @@ const ExpedirSoat: React.FC = () => {
         </div>
       )}
 
+      {/* Alerta de Saldo Negativo */}
+      {bolsa && saldoNegativo && (
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-5 mb-6 max-w-2xl mx-auto rounded-r-xl shadow-md">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="bg-red-500 rounded-full p-2">
+                <svg className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-semibold text-red-800">
+                <strong>⚠️ Saldo en negativo:</strong> la bolsa está en {formatCurrency(saldoActual)}. El sistema permite continuar con la expedición, pero debes recargar pronto.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Alerta de Saldo Bajo */}
-      {bolsa && bolsa.saldo_actual < SALDO_MINIMO && (
+      {bolsa && !saldoNegativo && bolsa.saldo_actual < SALDO_MINIMO && (
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 p-5 mb-6 max-w-2xl mx-auto rounded-r-xl shadow-md">
           <div className="flex items-center">
             <div className="flex-shrink-0">

@@ -44,7 +44,7 @@ def crear_usuario(
         email=usuario_data.email,
         nombre_completo=usuario_data.nombre_completo,
         rol=usuario_data.rol,
-        password_hash=hashed_password,
+        hashed_password=hashed_password,
         activo=1
     )
     
@@ -95,7 +95,7 @@ def reset_password(
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
-    usuario.password_hash = get_password_hash(new_password)
+    usuario.hashed_password = get_password_hash(new_password)
     db.commit()
     
     return {"message": "Contraseña actualizada exitosamente"}
