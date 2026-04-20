@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import shutil
 from pathlib import Path
 from app.core.database import get_db
+from app.core.config import settings
 from app.core.finanzas import calcular_detalle_soat
 from app.models.models import SoatExpedido, Bolsa, Usuario, TipoMotoCCEnum
 from app.schemas.schemas import SoatExpedidoCreate, SoatExpedidoResponse, SoatExpedidoUpdate
@@ -33,7 +34,29 @@ def _validar_pdf(file: UploadFile, field_name: str):
     header = file.file.read(5)
     file.file.seek(0)
     if header != b"%PDF-":
-        raise HTTPException(status_code=400, detail=f"El archivo PDF de {field_name} es inválido")
+        raise HTTPException(status_code=400, detail=f"El archivo PDF de {field_name} es inv?lido")
+
+
+def _validar_duplicado_placa_reciente(db: Session, placa: str):
+    ventana_minutos = settings.SOAT_DUPLICATE_WINDOW_MINUTES
+    if ventana_minutos <= 0:
+        return
+
+    limite = datetime.utcnow() - timedelta(minutes=ventana_minutos)
+    soat_reciente = db.query(SoatExpedido).filter(
+        SoatExpedido.placa == placa,
+        SoatExpedido.fecha_expedicion >= limite
+    ).order_by(SoatExpedido.fecha_expedicion.desc()).first()
+
+    if soat_reciente:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Ya existe un SOAT reciente para la placa {placa} "
+                f"(ID {soat_reciente.id}, fecha {soat_reciente.fecha_expedicion}). "
+                "Verifica antes de registrar otro."
+            )
+        )
 
 
 @router.post("/", response_model=SoatExpedidoResponse)
@@ -52,21 +75,24 @@ async def expedir_soat(
     Expedir un nuevo SOAT con documentos PDF.
     Solo para administradores.
     """
-    # Validar que los archivos sean PDFs válidos
+    # Validar que los archivos sean PDFs v?lidos
     _validar_pdf(documento_factura, "factura")
     _validar_pdf(documento_soat, "SOAT")
+
+    placa_normalizada = placa.upper().strip()
+    _validar_duplicado_placa_reciente(db, placa_normalizada)
     
     try:
         valor_soat, comision, total = calcular_detalle_soat(tipo_moto)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Tipo de moto inválido")
+        raise HTTPException(status_code=400, detail="Tipo de moto inv?lido")
     
     # Verificar saldo en bolsa
     bolsa = db.query(Bolsa).first()
     if not bolsa:
         raise HTTPException(status_code=400, detail="No hay bolsa inicializada")
     
-    # Operación atómica: saldo + registro + archivos
+    # Operaci?n at?mica: saldo + registro + archivos
     factura_path = None
     soat_path = None
     try:
@@ -75,7 +101,7 @@ async def expedir_soat(
 
         # Crear registro de SOAT expedido
         db_soat = SoatExpedido(
-            placa=placa.upper(),
+            placa=placa_normalizada,
             cedula=cedula.upper() if cedula else None,
             nombre_propietario=nombre_propietario.upper() if nombre_propietario else None,
             tipo_moto=tipo_moto,
@@ -142,7 +168,7 @@ def obtener_soat(
     db: Session = Depends(get_db)
 ):
     """
-    Obtener un SOAT específico por ID.
+    Obtener un SOAT espec?fico por ID.
     Disponible para admin y cliente.
     """
     soat = db.query(SoatExpedido).filter(SoatExpedido.id == soat_id).first()
@@ -161,7 +187,7 @@ def actualizar_soat(
     """
     Actualizar datos de un SOAT expedido.
     Solo para administradores.
-    Ajusta automáticamente el saldo de la bolsa si cambia el tipo de moto.
+    Ajusta autom?ticamente el saldo de la bolsa si cambia el tipo de moto.
     """
     # Buscar SOAT
     soat = db.query(SoatExpedido).filter(SoatExpedido.id == soat_id).first()
@@ -178,14 +204,14 @@ def actualizar_soat(
         try:
             nuevo_valor_soat, nueva_comision, nuevo_total = calcular_detalle_soat(soat_data.tipo_moto)
         except ValueError:
-            raise HTTPException(status_code=400, detail="Tipo de moto inválido")
+            raise HTTPException(status_code=400, detail="Tipo de moto inv?lido")
         
         # Calcular diferencia
         diferencia = nuevo_total - soat.total
         
         # Ajustar bolsa
         if diferencia > 0:
-            # Se necesita descontar más de la bolsa (puede quedar en negativo)
+            # Se necesita descontar m?s de la bolsa (puede quedar en negativo)
             bolsa.saldo_actual -= diferencia
         else:
             # Se devuelve dinero a la bolsa
@@ -313,7 +339,7 @@ async def upload_poliza(
     db: Session = Depends(get_db)
 ):
     """
-    Subir PDF de póliza a un SOAT expedido.
+    Subir PDF de p?liza a un SOAT expedido.
     Solo para administradores.
     """
     # Buscar SOAT
@@ -322,7 +348,7 @@ async def upload_poliza(
         raise HTTPException(status_code=404, detail="SOAT no encontrado")
     
     # Validar que sea PDF
-    _validar_pdf(documento_poliza, "póliza")
+    _validar_pdf(documento_poliza, "p?liza")
     
     # Guardar archivo
     upload_dir = Path("uploads/soats")
@@ -402,7 +428,7 @@ def descargar_poliza(
     db: Session = Depends(get_db)
 ):
     """
-    Descargar PDF de póliza de un SOAT.
+    Descargar PDF de p?liza de un SOAT.
     Disponible para admin y cliente.
     """
     soat = db.query(SoatExpedido).filter(SoatExpedido.id == soat_id).first()
@@ -410,7 +436,7 @@ def descargar_poliza(
         raise HTTPException(status_code=404, detail="SOAT no encontrado")
     
     if not soat.documento_poliza or not os.path.exists(soat.documento_poliza):
-        raise HTTPException(status_code=404, detail="Documento de póliza no encontrado")
+        raise HTTPException(status_code=404, detail="Documento de p?liza no encontrado")
     
     return FileResponse(
         path=soat.documento_poliza,

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "SOAT Manager Hero"
     DEBUG: bool = False
     ALLOW_PUBLIC_REGISTER: bool = False
+    SOAT_DUPLICATE_WINDOW_MINUTES: int = 5
     
     # Tarifas SOAT Holding Group Hero - 2026
     TARIFA_MOTO_HASTA_99CC: int = 256200
