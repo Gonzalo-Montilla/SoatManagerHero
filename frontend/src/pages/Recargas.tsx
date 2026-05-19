@@ -147,17 +147,30 @@ const Recargas: React.FC = () => {
 
   return (
     <div className="px-4 py-6">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 flex-1 text-center tracking-tight">Recargas</h1>
+      <div className="mb-8">
+        <div className="relative flex items-center justify-center">
+          <h1 className="text-4xl font-bold text-gray-900 text-center tracking-tight">Recargas</h1>
+          {isAdmin && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="hidden sm:inline-flex absolute right-0 top-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+            >
+              + Nueva Recarga
+            </button>
+          )}
+        </div>
         {isAdmin && (
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
-          >
-            + Nueva Recarga
-          </button>
+          <div className="mt-4 flex justify-center sm:hidden">
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+            >
+              + Nueva Recarga
+            </button>
+          </div>
         )}
       </div>
+      <p className="text-center text-gray-500 -mt-4 mb-8">Registro de ingresos de bolsa y sus soportes</p>
 
       <div className="bg-white shadow-xl overflow-hidden rounded-2xl border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
@@ -189,14 +202,14 @@ const Recargas: React.FC = () => {
               </tr>
             ) : (
               currentRecargas.map((recarga) => (
-                <tr key={recarga.id} className="hover:bg-green-50 transition-colors duration-150">
+                <tr key={recarga.id} className="hover:bg-blue-50/70 transition-colors duration-150">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
                     {formatCurrency(recarga.monto)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {recarga.referencia || '-'}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-gray-500">
                     {recarga.observaciones || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -209,7 +222,7 @@ const Recargas: React.FC = () => {
                         className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-medium transition-colors duration-200"
                         title="Ver Comprobante"
                       >
-                        📄 Ver
+                        Ver
                       </button>
                     ) : isAdmin ? (
                       <button
@@ -217,7 +230,7 @@ const Recargas: React.FC = () => {
                         className="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 font-medium transition-colors duration-200"
                         title="Subir Comprobante"
                       >
-                        📤 Subir
+                        Subir
                       </button>
                     ) : (
                       <span className="text-gray-400 italic">Sin comprobante</span>
@@ -291,14 +304,13 @@ const Recargas: React.FC = () => {
 
       {/* Modal Nueva Recarga */}
       {showModal && (
-        <div className="fixed z-50 inset-0 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity" onClick={() => setShowModal(false)}></div>
-            
-            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all max-w-lg w-full z-20">
+        <div className="fixed z-50 inset-0">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
+          <div className="relative h-full w-full flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transition-all max-w-lg w-full z-20 max-h-[90vh] flex flex-col">
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-white">💰 Nueva Recarga</h3>
+                  <h3 className="text-xl font-bold text-white">Nueva Recarga</h3>
                   <button
                     onClick={() => setShowModal(false)}
                     className="text-white hover:text-gray-200 transition-colors"
@@ -308,7 +320,7 @@ const Recargas: React.FC = () => {
                 </div>
               </div>
               
-              <div className="bg-white px-6 py-6">
+              <div className="bg-white px-6 py-6 overflow-y-auto">
                 {error && (
                   <div className="mb-4 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-md">
                     <p className="text-sm font-semibold text-red-800">❌ {error}</p>
@@ -371,7 +383,7 @@ const Recargas: React.FC = () => {
                       type="submit"
                       className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                     >
-                      💾 Registrar Recarga
+                      Registrar Recarga
                     </button>
                     <button
                       type="button"
@@ -395,30 +407,28 @@ const Recargas: React.FC = () => {
       {/* Modal Ver Comprobante */}
       {showComprobanteModal && selectedRecarga && (
         <div className="fixed z-[60] inset-0">
-          <div className="absolute inset-0 bg-gray-900 opacity-75" onClick={() => setShowComprobanteModal(false)}></div>
+          <div className="absolute inset-0 bg-gray-900/70" onClick={() => setShowComprobanteModal(false)}></div>
           <div className="relative h-full w-full flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all w-full max-w-4xl max-h-[90vh] flex flex-col">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    Comprobante - Recarga #{selectedRecarga.id}
-                  </h3>
-                  <button
-                    onClick={() => setShowComprobanteModal(false)}
-                    className="text-gray-400 hover:text-gray-500"
-                  >
-                    <span className="text-2xl">&times;</span>
-                  </button>
-                </div>
-                <div className="mt-2">
-                  <iframe
-                    src={comprobanteUrl}
-                    className="w-full h-96"
-                    title={`Comprobante recarga ${selectedRecarga.id}`}
-                  />
-                </div>
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transition-all w-full max-w-4xl max-h-[90vh] flex flex-col">
+              <div className="bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Comprobante - Recarga #{selectedRecarga.id}
+                </h3>
+                <button
+                  onClick={() => setShowComprobanteModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="text-2xl">&times;</span>
+                </button>
               </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end gap-3">
+              <div className="px-6 py-5 overflow-y-auto">
+                <iframe
+                  src={comprobanteUrl}
+                  className="w-full h-96 rounded-lg border border-gray-200"
+                  title={`Comprobante recarga ${selectedRecarga.id}`}
+                />
+              </div>
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
                 <a
                   href={comprobanteUrl}
                   download
@@ -440,14 +450,13 @@ const Recargas: React.FC = () => {
 
       {/* Modal Subir Comprobante */}
       {showUploadModal && selectedRecarga && (
-        <div className="fixed z-50 inset-0 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity" onClick={() => setShowUploadModal(false)}></div>
-            
-            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all max-w-lg w-full z-20">
+        <div className="fixed z-50 inset-0">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowUploadModal(false)}></div>
+          <div className="relative h-full w-full flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transition-all max-w-lg w-full z-20 max-h-[90vh] flex flex-col">
               <div className="bg-gradient-to-r from-orange-600 to-orange-700 px-6 py-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-white">📤 Subir Comprobante - Recarga #{selectedRecarga.id}</h3>
+                  <h3 className="text-xl font-bold text-white">Subir Comprobante - Recarga #{selectedRecarga.id}</h3>
                   <button
                     onClick={() => setShowUploadModal(false)}
                     className="text-white hover:text-gray-200 transition-colors"
@@ -457,7 +466,7 @@ const Recargas: React.FC = () => {
                 </div>
               </div>
               
-              <div className="bg-white px-6 py-6">
+              <div className="bg-white px-6 py-6 overflow-y-auto">
                 {uploadError && (
                   <div className="mb-4 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-md">
                     <p className="text-sm font-semibold text-red-800">❌ {uploadError}</p>
@@ -495,7 +504,7 @@ const Recargas: React.FC = () => {
                       disabled={!archivoUpload}
                       className="flex-1 bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-xl hover:from-orange-700 hover:to-orange-800 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      📤 Subir Comprobante
+                      Subir Comprobante
                     </button>
                     <button
                       type="button"

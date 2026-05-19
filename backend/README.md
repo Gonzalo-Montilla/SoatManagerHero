@@ -130,4 +130,4 @@ sudo systemctl status soat-backend
 
 - Moto hasta 99cc: **$256,200**
 - Moto 100-200cc: **$343,300**
-- Comisión fija: **$30,000**
+- Comisión fija: **$20,000**

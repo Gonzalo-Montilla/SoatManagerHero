@@ -17,13 +17,14 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "SOAT Manager Hero"
     DEBUG: bool = False
+    APP_TIMEZONE: str = "America/Bogota"
     ALLOW_PUBLIC_REGISTER: bool = False
     SOAT_DUPLICATE_WINDOW_MINUTES: int = 5
     
     # Tarifas SOAT Holding Group Hero - 2026
     TARIFA_MOTO_HASTA_99CC: int = 256200
     TARIFA_MOTO_100_200CC: int = 343300
-    COMISION_FIJA: int = 30000
+    COMISION_FIJA: int = 20000
     
     @property
     def allowed_origins_list(self) -> List[str]:

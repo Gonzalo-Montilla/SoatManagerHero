@@ -98,7 +98,8 @@ const ExpedirSoat: React.FC = () => {
 
   return (
     <div className="px-4 py-6 max-w-4xl mx-auto">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8 text-center tracking-tight">Expedir SOAT</h1>
+      <h1 className="text-4xl font-bold text-gray-900 text-center tracking-tight">Expedir SOAT</h1>
+      <p className="text-center text-gray-500 mt-2 mb-8">Registro comercial y documental de una nueva expedición</p>
 
       {/* Tarjeta de Saldo */}
       {bolsa && (
@@ -130,40 +131,18 @@ const ExpedirSoat: React.FC = () => {
       {/* Alerta de Saldo Negativo */}
       {bolsa && saldoNegativo && (
         <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-5 mb-6 max-w-2xl mx-auto rounded-r-xl shadow-md">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="bg-red-500 rounded-full p-2">
-                <svg className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-semibold text-red-800">
-                <strong>⚠️ Saldo en negativo:</strong> la bolsa está en {formatCurrency(saldoActual)}. El sistema permite continuar con la expedición, pero debes recargar pronto.
-              </p>
-            </div>
-          </div>
+          <p className="text-sm font-semibold text-red-800">
+            <strong>Saldo en negativo:</strong> la bolsa está en {formatCurrency(saldoActual)}. El sistema permite continuar con la expedición, pero debes recargar pronto.
+          </p>
         </div>
       )}
 
       {/* Alerta de Saldo Bajo */}
       {bolsa && !saldoNegativo && bolsa.saldo_actual < SALDO_MINIMO && (
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 p-5 mb-6 max-w-2xl mx-auto rounded-r-xl shadow-md">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="bg-yellow-400 rounded-full p-2">
-                <svg className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-semibold text-yellow-800">
-                <strong>⚠️ Saldo bajo:</strong> El saldo actual es menor a {formatCurrency(SALDO_MINIMO)}. Considere hacer una recarga pronto.
-              </p>
-            </div>
-          </div>
+          <p className="text-sm font-semibold text-yellow-800">
+            <strong>Saldo bajo:</strong> el saldo actual es menor a {formatCurrency(SALDO_MINIMO)}. Considera hacer una recarga pronto.
+          </p>
         </div>
       )}
 
@@ -171,13 +150,13 @@ const ExpedirSoat: React.FC = () => {
         <div className="px-6 py-8">
           {success && (
             <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-r-xl shadow-md">
-              <p className="text-sm font-semibold text-green-800">✅ SOAT expedido exitosamente. Redirigiendo...</p>
+              <p className="text-sm font-semibold text-green-800">SOAT expedido exitosamente. Redirigiendo...</p>
             </div>
           )}
 
           {error && (
             <div className="mb-6 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-md">
-              <p className="text-sm font-semibold text-red-800">❌ {error}</p>
+              <p className="text-sm font-semibold text-red-800">{error}</p>
             </div>
           )}
 
@@ -226,8 +205,8 @@ const ExpedirSoat: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, tipo_moto: e.target.value as TipoMotoCCEnumType })}
                 className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               >
-                <option value={TipoMotoCCEnum.HASTA_99CC}>Hasta 99cc - $256,200 + $30,000</option>
-                <option value={TipoMotoCCEnum.DE_100_200CC}>100-200cc - $343,300 + $30,000</option>
+                <option value={TipoMotoCCEnum.HASTA_99CC}>Hasta 99cc - $256,200 + $20,000</option>
+                <option value={TipoMotoCCEnum.DE_100_200CC}>100-200cc - $343,300 + $20,000</option>
               </select>
             </div>
 
@@ -243,7 +222,7 @@ const ExpedirSoat: React.FC = () => {
             </div>
 
             <div className="border-t border-gray-200 pt-6 mt-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">📎 Documentos PDF</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Documentos PDF</h3>
               
               <div className="space-y-4">
                 <div>
@@ -288,7 +267,7 @@ const ExpedirSoat: React.FC = () => {
                 disabled={loading}
                 className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                {loading ? '⏳ Expediendo...' : '✅ Expedir SOAT'}
+                {loading ? 'Expediendo...' : 'Expedir SOAT'}
               </button>
               <button
                 type="button"

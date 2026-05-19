@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, date
 from app.core.database import get_db
+from app.core.config import settings
 from app.core.finanzas import calcular_conciliacion_saldo
 from app.models.models import Bolsa, SoatExpedido, Recarga, Usuario
 from app.schemas.schemas import DashboardStats
@@ -33,10 +33,10 @@ def get_dashboard_stats(
     # Total recargas (monto)
     total_recargas = db.query(func.sum(Recarga.monto)).scalar() or 0
     
-    # SOATs expedidos hoy
-    hoy = date.today()
+    # SOATs expedidos hoy en la zona horaria de negocio
     soats_hoy = db.query(func.count(SoatExpedido.id)).filter(
-        func.date(SoatExpedido.fecha_expedicion) == hoy
+        func.date(func.timezone(settings.APP_TIMEZONE, SoatExpedido.fecha_expedicion))
+        == func.date(func.timezone(settings.APP_TIMEZONE, func.now()))
     ).scalar()
     
     return {

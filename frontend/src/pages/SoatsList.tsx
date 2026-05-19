@@ -219,6 +219,9 @@ const SoatsList: React.FC = () => {
     return <div className="text-center py-10">Cargando...</div>;
   }
 
+  const saldoActual = bolsa?.saldo_actual ?? 0;
+  const saldoNegativo = saldoActual < 0;
+
   // Filtrar SOATs por placa
   const filteredSoats = soats.filter(soat =>
     soat.placa.toLowerCase().includes(searchPlaca.toLowerCase())
@@ -285,13 +288,19 @@ const SoatsList: React.FC = () => {
 
       {/* Tarjeta de Saldo */}
       {bolsa && (
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 overflow-hidden shadow-xl rounded-2xl mb-6 transform hover:scale-[1.02] transition-all duration-300">
+        <div className={`overflow-hidden shadow-xl rounded-2xl mb-6 transform hover:scale-[1.02] transition-all duration-300 ${
+          saldoNegativo
+            ? 'bg-gradient-to-br from-red-600 to-red-700'
+            : 'bg-gradient-to-br from-blue-500 to-blue-600'
+        }`}>
           <div className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-blue-100 uppercase tracking-wide">Saldo en Bolsa</h3>
+                <h3 className={`text-sm font-semibold uppercase tracking-wide ${
+                  saldoNegativo ? 'text-red-100' : 'text-blue-100'
+                }`}>Saldo en Bolsa</h3>
                 <p className="text-4xl font-bold text-white mt-2">
-                  {formatCurrency(bolsa.saldo_actual)}
+                  {formatCurrency(saldoActual)}
                 </p>
               </div>
               <div className="bg-white bg-opacity-20 rounded-full p-3">
@@ -304,8 +313,16 @@ const SoatsList: React.FC = () => {
         </div>
       )}
 
+      {saldoNegativo && (
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-5 mb-6 rounded-r-xl shadow-md">
+          <p className="text-sm font-semibold text-red-800">
+            <strong>Saldo en negativo:</strong> la bolsa está en {formatCurrency(saldoActual)}. Se permite seguir registrando consumos, pero se recomienda recargar lo antes posible.
+          </p>
+        </div>
+      )}
+
       {/* Alerta de Saldo Bajo */}
-      {bolsa && bolsa.saldo_actual < SALDO_MINIMO && (
+      {bolsa && !saldoNegativo && bolsa.saldo_actual < SALDO_MINIMO && (
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 p-5 mb-6 rounded-r-xl shadow-md">
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -398,14 +415,14 @@ const SoatsList: React.FC = () => {
               </tr>
             ) : (
               currentSoats.map((soat) => (
-                <tr key={soat.id} className="hover:bg-blue-50 transition-colors duration-150">
+                <tr key={soat.id} className="hover:bg-blue-50/70 transition-colors duration-150">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                     {soat.placa}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {soat.cedula || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {soat.nombre_propietario || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
@@ -517,28 +534,26 @@ const SoatsList: React.FC = () => {
       {/* Modal para Ver PDF */}
       {showPdfModal && (
         <div className="fixed z-[60] inset-0">
-          <div className="absolute inset-0 bg-gray-900 opacity-75" onClick={() => setShowPdfModal(false)}></div>
+          <div className="absolute inset-0 bg-gray-900/70" onClick={() => setShowPdfModal(false)}></div>
           <div className="relative h-full w-full flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all w-full max-w-4xl max-h-[90vh] flex flex-col z-[70]">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">{pdfTitle}</h3>
-                  <button
-                    onClick={() => setShowPdfModal(false)}
-                    className="text-gray-400 hover:text-gray-500"
-                  >
-                    <span className="text-2xl">&times;</span>
-                  </button>
-                </div>
-                <div className="mt-2">
-                  <iframe
-                    src={pdfUrl}
-                    className="w-full h-96"
-                    title={pdfTitle}
-                  />
-                </div>
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transition-all w-full max-w-4xl max-h-[90vh] flex flex-col z-[70]">
+              <div className="bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">{pdfTitle}</h3>
+                <button
+                  onClick={() => setShowPdfModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="text-2xl">&times;</span>
+                </button>
               </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end gap-3">
+              <div className="px-6 py-5 overflow-y-auto">
+                <iframe
+                  src={pdfUrl}
+                  className="w-full h-96 rounded-lg border border-gray-200"
+                  title={pdfTitle}
+                />
+              </div>
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
                 <a
                   href={pdfUrl}
                   download
@@ -560,23 +575,35 @@ const SoatsList: React.FC = () => {
 
       {/* Modal para Subir Póliza */}
       {showPolizaModal && selectedSoat && (
-        <div className="fixed z-10 inset-0">
-          <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={() => {
+        <div className="fixed z-50 inset-0">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => {
             setShowPolizaModal(false);
             setSelectedSoat(null);
             setPolizaFile(null);
             setError('');
           }}></div>
           <div className="relative h-full w-full flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all w-full max-w-lg">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Subir Póliza - SOAT {selectedSoat.placa}
-                </h3>
-                
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transition-all w-full max-w-lg max-h-[90vh] flex flex-col">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-white">Subir Póliza - SOAT {selectedSoat.placa}</h3>
+                  <button
+                    onClick={() => {
+                      setShowPolizaModal(false);
+                      setSelectedSoat(null);
+                      setPolizaFile(null);
+                      setError('');
+                    }}
+                    className="text-white hover:text-gray-200 transition-colors"
+                  >
+                    <span className="text-2xl">&times;</span>
+                  </button>
+                </div>
+              </div>
+              <div className="bg-white px-6 py-6 overflow-y-auto">
                 {error && (
-                  <div className="mb-4 bg-red-50 p-3 rounded-md">
-                    <p className="text-sm text-red-800">{error}</p>
+                  <div className="mb-4 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-md">
+                    <p className="text-sm font-semibold text-red-800">{error}</p>
                   </div>
                 )}
 
@@ -588,18 +615,18 @@ const SoatsList: React.FC = () => {
                     type="file"
                     accept="application/pdf"
                     onChange={handlePolizaFileChange}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
                   {polizaFile && (
-                    <p className="mt-2 text-sm text-green-600">✓ {polizaFile.name}</p>
+                    <p className="mt-2 text-sm font-medium text-green-600">✓ {polizaFile.name}</p>
                   )}
                 </div>
               </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
                 <button
                   onClick={handleUploadPoliza}
                   disabled={!polizaFile || uploadingPoliza}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none disabled:bg-gray-400 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none disabled:bg-gray-400 sm:text-sm"
                 >
                   {uploadingPoliza ? 'Subiendo...' : 'Subir Póliza'}
                 </button>
@@ -610,7 +637,7 @@ const SoatsList: React.FC = () => {
                     setPolizaFile(null);
                     setError('');
                   }}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm"
+                  className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:text-sm"
                 >
                   Cancelar
                 </button>
@@ -622,15 +649,14 @@ const SoatsList: React.FC = () => {
 
       {/* Modal para Editar SOAT */}
       {showEditModal && selectedSoat && (
-        <div className="fixed z-50 inset-0 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity" onClick={() => {
-              setShowEditModal(false);
-              setNuevaFactura(null);
-              setNuevoSoat(null);
-            }}></div>
-            
-            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all max-w-2xl w-full z-20 max-h-[90vh] overflow-y-auto">
+        <div className="fixed z-50 inset-0">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => {
+            setShowEditModal(false);
+            setNuevaFactura(null);
+            setNuevoSoat(null);
+          }}></div>
+          <div className="relative h-full w-full flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transition-all max-w-2xl w-full z-20 max-h-[90vh] flex flex-col">
               <div className="bg-gradient-to-r from-yellow-600 to-yellow-700 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-bold text-white">✏️ Editar SOAT - {selectedSoat.placa}</h3>
@@ -647,7 +673,7 @@ const SoatsList: React.FC = () => {
                 </div>
               </div>
               
-              <div className="bg-white px-6 py-6">
+              <div className="bg-white px-6 py-6 overflow-y-auto">
                 {error && (
                   <div className="mb-4 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-md">
                     <p className="text-sm font-semibold text-red-800">❌ {error}</p>
@@ -703,8 +729,8 @@ const SoatsList: React.FC = () => {
                       className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
                       required
                     >
-                      <option value="hasta_99cc">Hasta 99cc - $286,200</option>
-                      <option value="100_200cc">100-200cc - $373,300</option>
+                      <option value="hasta_99cc">Hasta 99cc - $276,200</option>
+                      <option value="100_200cc">100-200cc - $363,300</option>
                     </select>
                     <p className="mt-2 text-xs text-gray-500">
                       ⚠️ Si cambias el tipo de moto, el sistema ajustará automáticamente el saldo de la bolsa.

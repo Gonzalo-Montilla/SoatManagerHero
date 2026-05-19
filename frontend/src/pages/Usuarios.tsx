@@ -77,15 +77,26 @@ const Usuarios: React.FC = () => {
 
   return (
     <div className="px-4 py-6">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 flex-1 text-center tracking-tight">Gestión de Usuarios</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
-        >
-          + Nuevo Usuario
-        </button>
+      <div className="mb-8">
+        <div className="relative flex items-center justify-center">
+          <h1 className="text-4xl font-bold text-gray-900 text-center tracking-tight">Gestión de Usuarios</h1>
+          <button
+            onClick={() => setShowModal(true)}
+            className="hidden sm:inline-flex absolute right-0 top-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+          >
+            + Nuevo Usuario
+          </button>
+        </div>
+        <div className="mt-4 flex justify-center sm:hidden">
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+          >
+            + Nuevo Usuario
+          </button>
+        </div>
       </div>
+      <p className="text-center text-gray-500 -mt-4 mb-8">Administración de accesos y perfiles del sistema</p>
 
       <div className="bg-white shadow-xl overflow-hidden rounded-2xl border border-gray-200">
         <div className="overflow-x-auto">
@@ -121,11 +132,11 @@ const Usuarios: React.FC = () => {
                 </tr>
               ) : (
                 usuarios.map((usuario) => (
-                  <tr key={usuario.id} className="hover:bg-blue-50 transition-colors duration-150">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <tr key={usuario.id} className="hover:bg-blue-50/70 transition-colors duration-150">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {usuario.email}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {usuario.nombre_completo}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -143,7 +154,7 @@ const Usuarios: React.FC = () => {
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-red-100 text-red-700'
                       }`}>
-                        {usuario.activo === 1 ? '✓ Activo' : '✗ Inactivo'}
+                        {usuario.activo === 1 ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -171,14 +182,13 @@ const Usuarios: React.FC = () => {
 
       {/* Modal Nuevo Usuario */}
       {showModal && (
-        <div className="fixed z-50 inset-0 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity" onClick={() => setShowModal(false)}></div>
-            
-            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all max-w-lg w-full z-20">
+        <div className="fixed z-50 inset-0">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
+          <div className="relative h-full w-full flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl transition-all max-w-lg w-full z-20 max-h-[90vh] flex flex-col">
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-white">👤 Nuevo Usuario</h3>
+                  <h3 className="text-xl font-bold text-white">Nuevo Usuario</h3>
                   <button
                     onClick={() => setShowModal(false)}
                     className="text-white hover:text-gray-200 transition-colors"
@@ -188,10 +198,10 @@ const Usuarios: React.FC = () => {
                 </div>
               </div>
               
-              <div className="bg-white px-6 py-6">
+              <div className="bg-white px-6 py-6 overflow-y-auto">
                 {error && (
                   <div className="mb-4 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-md">
-                    <p className="text-sm font-semibold text-red-800">❌ {error}</p>
+                    <p className="text-sm font-semibold text-red-800">{error}</p>
                   </div>
                 )}
 
@@ -250,7 +260,7 @@ const Usuarios: React.FC = () => {
                       type="submit"
                       className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                     >
-                      💾 Crear Usuario
+                      Crear Usuario
                     </button>
                     <button
                       type="button"

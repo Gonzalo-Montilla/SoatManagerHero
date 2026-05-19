@@ -43,7 +43,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="px-4 py-6">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8 text-center tracking-tight">Dashboard</h1>
+      <h1 className="text-4xl font-bold text-gray-900 text-center tracking-tight">Dashboard</h1>
+      <p className="text-center text-gray-500 mt-2 mb-8">Resumen financiero y operativo en tiempo real</p>
 
       {/* Saldo de Bolsa */}
       <div className={`overflow-hidden shadow-xl rounded-2xl mb-8 transform hover:scale-[1.02] transition-all duration-300 ${
@@ -81,7 +82,7 @@ const Dashboard: React.FC = () => {
       {/* Estadísticas Admin */}
       {isAdmin && stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-2xl transition-all duration-300 border border-gray-100">
+          <div className="bg-white overflow-hidden shadow rounded-xl hover:shadow-lg transition-all duration-300 border border-gray-200">
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -97,7 +98,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-2xl transition-all duration-300 border border-gray-100">
+          <div className="bg-white overflow-hidden shadow rounded-xl hover:shadow-lg transition-all duration-300 border border-gray-200">
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -115,7 +116,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-2xl transition-all duration-300 border border-gray-100">
+          <div className="bg-white overflow-hidden shadow rounded-xl hover:shadow-lg transition-all duration-300 border border-gray-200">
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -133,7 +134,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow-lg rounded-xl hover:shadow-2xl transition-all duration-300 border border-gray-100">
+          <div className="bg-white overflow-hidden shadow rounded-xl hover:shadow-lg transition-all duration-300 border border-gray-200">
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
