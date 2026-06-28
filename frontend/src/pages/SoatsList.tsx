@@ -272,42 +272,42 @@ const SoatsList: React.FC = () => {
 
   return (
     <div className="px-4 py-6">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 flex-1 text-center tracking-tight">SOATs Expedidos</h1>
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-4xl font-bold text-gray-900 tracking-tight text-center sm:text-left">SOATs Expedidos</h1>
         <button
           onClick={exportToExcel}
           disabled={filteredSoats.length === 0}
-          className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          className="w-full sm:w-auto bg-white border-2 border-green-200 text-green-700 px-4 py-2.5 rounded-xl hover:bg-green-50 shadow-sm transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <span>📈 Exportar a Excel</span>
+          <span>Exportar a Excel</span>
         </button>
+        </div>
       </div>
 
       {/* Tarjeta de Saldo */}
       {bolsa && (
-        <div className={`overflow-hidden shadow-xl rounded-2xl mb-6 transform hover:scale-[1.02] transition-all duration-300 ${
+        <div className={`overflow-hidden shadow-xl rounded-2xl mb-6 transition-all duration-300 ${
           saldoNegativo
             ? 'bg-gradient-to-br from-red-600 to-red-700'
             : 'bg-gradient-to-br from-blue-500 to-blue-600'
         }`}>
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className={`text-sm font-semibold uppercase tracking-wide ${
+          <div className="p-5 sm:p-6 relative">
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 rounded-full p-2.5 sm:p-3">
+              <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="pr-16 sm:pr-20 min-w-0">
+                <h3 className={`text-xs sm:text-sm font-semibold uppercase tracking-wide ${
                   saldoNegativo ? 'text-red-100' : 'text-blue-100'
                 }`}>Saldo en Bolsa</h3>
-                <p className="text-4xl font-bold text-white mt-2">
+                <p className="text-[clamp(1.95rem,9vw,3rem)] leading-none font-bold text-white mt-2 whitespace-nowrap">
                   {formatCurrency(saldoActual)}
                 </p>
-              </div>
-              <div className="bg-white bg-opacity-20 rounded-full p-3">
-                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
             </div>
           </div>
         </div>
@@ -376,9 +376,61 @@ const SoatsList: React.FC = () => {
           </p>
         )}
       </div>
+
+      <div className="md:hidden space-y-3 mb-4">
+        {soats.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center text-sm text-gray-500 shadow-sm">
+            No hay SOATs expedidos
+          </div>
+        ) : (
+          currentSoats.map((soat) => (
+            <div key={soat.id} className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-base font-bold text-gray-900">{soat.placa}</p>
+                  <p className="text-xs text-gray-500">{formatDate(soat.fecha_expedicion)}</p>
+                </div>
+                <p className="text-base font-bold text-green-600">{formatCurrency(soat.total)}</p>
+              </div>
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">Cédula:</span> {soat.cedula || '-'}
+              </p>
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">Propietario:</span> {soat.nombre_propietario || '-'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {soat.documento_factura && (
+                  <button
+                    onClick={() => handleVerDocumento(soat, 'factura')}
+                    className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-medium transition-colors duration-200 text-sm"
+                  >
+                    Factura
+                  </button>
+                )}
+                {soat.documento_soat && (
+                  <button
+                    onClick={() => handleVerDocumento(soat, 'soat')}
+                    className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-medium transition-colors duration-200 text-sm"
+                  >
+                    SOAT
+                  </button>
+                )}
+                {isAdmin && (
+                  <button
+                    onClick={() => handleEditSoat(soat)}
+                    className="px-3 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 font-medium transition-colors duration-200 text-sm"
+                  >
+                    Editar
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
       
       <div className="bg-white shadow-xl overflow-hidden rounded-2xl overflow-x-auto border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="hidden md:table min-w-full divide-y divide-gray-200">
           <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
             <tr>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -474,13 +526,13 @@ const SoatsList: React.FC = () => {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
+        <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="text-sm text-gray-700">
             Mostrando <span className="font-semibold">{indexOfFirstItem + 1}</span> a{' '}
             <span className="font-semibold">{Math.min(indexOfLastItem, filteredSoats.length)}</span> de{' '}
             <span className="font-semibold">{filteredSoats.length}</span> SOATs{searchPlaca && ' (filtrados)'}
           </div>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}

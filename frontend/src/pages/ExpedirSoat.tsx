@@ -103,26 +103,24 @@ const ExpedirSoat: React.FC = () => {
 
       {/* Tarjeta de Saldo */}
       {bolsa && (
-        <div className={`overflow-hidden shadow-xl rounded-2xl mb-6 max-w-2xl mx-auto transform hover:scale-[1.02] transition-all duration-300 ${
+        <div className={`overflow-hidden shadow-xl rounded-2xl mb-6 max-w-2xl mx-auto transition-all duration-300 ${
           saldoNegativo
             ? 'bg-gradient-to-br from-red-600 to-red-700'
             : 'bg-gradient-to-br from-blue-500 to-blue-600'
         }`}>
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className={`text-sm font-semibold uppercase tracking-wide ${
+          <div className="p-5 sm:p-6 relative">
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 rounded-full p-2.5 sm:p-3">
+              <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="pr-16 sm:pr-20 min-w-0">
+                <h3 className={`text-xs sm:text-sm font-semibold uppercase tracking-wide ${
                   saldoNegativo ? 'text-red-100' : 'text-blue-100'
                 }`}>Saldo en Bolsa</h3>
-                <p className="text-4xl font-bold text-white mt-2">
+                <p className="text-[clamp(1.95rem,9vw,3rem)] leading-none font-bold text-white mt-2 whitespace-nowrap">
                   {formatCurrency(saldoActual)}
                 </p>
-              </div>
-              <div className="bg-white bg-opacity-20 rounded-full p-3">
-                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
             </div>
           </div>
         </div>

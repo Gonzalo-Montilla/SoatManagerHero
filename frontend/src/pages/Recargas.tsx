@@ -172,7 +172,50 @@ const Recargas: React.FC = () => {
       </div>
       <p className="text-center text-gray-500 -mt-4 mb-8">Registro de ingresos de bolsa y sus soportes</p>
 
+      <div className="md:hidden space-y-3 mb-4">
+        {recargas.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center text-sm text-gray-500 shadow-sm">
+            No hay recargas registradas
+          </div>
+        ) : (
+          currentRecargas.map((recarga) => (
+            <div key={recarga.id} className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-lg font-bold text-green-600">{formatCurrency(recarga.monto)}</p>
+                <p className="text-xs text-gray-500">{formatDate(recarga.fecha_recarga)}</p>
+              </div>
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">Referencia:</span> {recarga.referencia || '-'}
+              </p>
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">Observaciones:</span> {recarga.observaciones || '-'}
+              </p>
+              <div>
+                {recarga.documento_comprobante ? (
+                  <button
+                    onClick={() => handleVerComprobante(recarga)}
+                    className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-medium transition-colors duration-200 text-sm"
+                  >
+                    Ver comprobante
+                  </button>
+                ) : isAdmin ? (
+                  <button
+                    onClick={() => handleUploadComprobante(recarga)}
+                    className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 font-medium transition-colors duration-200 text-sm"
+                  >
+                    Subir comprobante
+                  </button>
+                ) : (
+                  <span className="text-gray-400 italic text-sm">Sin comprobante</span>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       <div className="bg-white shadow-xl overflow-hidden rounded-2xl border border-gray-200">
+        <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
             <tr>
@@ -241,17 +284,18 @@ const Recargas: React.FC = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
+        <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="text-sm text-gray-700">
             Mostrando <span className="font-semibold">{indexOfFirstItem + 1}</span> a{' '}
             <span className="font-semibold">{Math.min(indexOfLastItem, recargas.length)}</span> de{' '}
             <span className="font-semibold">{recargas.length}</span> recargas
           </div>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}

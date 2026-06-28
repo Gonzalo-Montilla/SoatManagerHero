@@ -98,8 +98,50 @@ const Usuarios: React.FC = () => {
       </div>
       <p className="text-center text-gray-500 -mt-4 mb-8">Administración de accesos y perfiles del sistema</p>
 
+      <div className="md:hidden space-y-3 mb-4">
+        {usuarios.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center text-sm text-gray-500 shadow-sm">
+            No hay usuarios registrados
+          </div>
+        ) : (
+          usuarios.map((usuario) => (
+            <div key={usuario.id} className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-2">
+              <p className="text-sm font-semibold text-gray-900 break-all">{usuario.email}</p>
+              <p className="text-sm text-gray-700">{usuario.nombre_completo}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    usuario.rol === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                  }`}
+                >
+                  {usuario.rol}
+                </span>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    usuario.activo === 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}
+                >
+                  {usuario.activo === 1 ? 'Activo' : 'Inactivo'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500">{formatDate(usuario.fecha_creacion)}</p>
+              <button
+                onClick={() => toggleActivo(usuario.id)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                  usuario.activo === 1
+                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                }`}
+              >
+                {usuario.activo === 1 ? 'Desactivar' : 'Activar'}
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
       <div className="bg-white shadow-xl overflow-hidden rounded-2xl border border-gray-200">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
               <tr>
