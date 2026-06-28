@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, date
+from typing import Optional, List
 from app.models.models import RolEnum, TipoMotoCCEnum
 
 
@@ -109,3 +109,66 @@ class DashboardStats(BaseModel):
     total_comisiones_generadas: int
     total_recargas: int
     soats_hoy: int
+
+
+class DashboardMetricsSummary(BaseModel):
+    soats_expedidos: int
+    comisiones_generadas: int
+    recargas_total: int
+    consumo_total: int
+    valor_soat_total: int
+    ticket_promedio: float
+
+
+class DashboardMetricsByTypeItem(BaseModel):
+    tipo_moto: TipoMotoCCEnum
+    cantidad: int
+    valor_soat: int
+    comision: int
+    total: int
+
+
+class DashboardMetricsDailyItem(BaseModel):
+    fecha: date
+    soats_expedidos: int
+    comisiones: int
+    consumo: int
+    recargas: int
+
+
+class DashboardMetricsResponse(BaseModel):
+    preset: str
+    start_date: date
+    end_date: date
+    resumen: DashboardMetricsSummary
+    por_tipo: List[DashboardMetricsByTypeItem]
+    serie_diaria: List[DashboardMetricsDailyItem]
+
+
+class DashboardClientMetricsSummary(BaseModel):
+    soats_expedidos: int
+    recargas_total: int
+    consumo_total: int
+    ticket_promedio: float
+
+
+class DashboardClientMetricsByTypeItem(BaseModel):
+    tipo_moto: TipoMotoCCEnum
+    cantidad: int
+    total: int
+
+
+class DashboardClientMetricsDailyItem(BaseModel):
+    fecha: date
+    soats_expedidos: int
+    consumo: int
+    recargas: int
+
+
+class DashboardClientMetricsResponse(BaseModel):
+    preset: str
+    start_date: date
+    end_date: date
+    resumen: DashboardClientMetricsSummary
+    por_tipo: List[DashboardClientMetricsByTypeItem]
+    serie_diaria: List[DashboardClientMetricsDailyItem]

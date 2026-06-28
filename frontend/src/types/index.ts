@@ -86,3 +86,68 @@ export interface DashboardStats {
   total_recargas: number;
   soats_hoy: number;
 }
+
+export type MetricsPreset = 'today' | 'week' | 'month' | 'last30' | 'custom';
+
+export interface DashboardMetricsSummary {
+  soats_expedidos: number;
+  comisiones_generadas: number;
+  recargas_total: number;
+  consumo_total: number;
+  valor_soat_total: number;
+  ticket_promedio: number;
+}
+
+export interface DashboardMetricsByTypeItem {
+  tipo_moto: TipoMotoCCEnum;
+  cantidad: number;
+  valor_soat: number;
+  comision: number;
+  total: number;
+}
+
+export interface DashboardMetricsDailyItem {
+  fecha: string;
+  soats_expedidos: number;
+  comisiones: number;
+  consumo: number;
+  recargas: number;
+}
+
+export interface DashboardMetrics {
+  preset: MetricsPreset | string;
+  start_date: string;
+  end_date: string;
+  resumen: DashboardMetricsSummary;
+  por_tipo: DashboardMetricsByTypeItem[];
+  serie_diaria: DashboardMetricsDailyItem[];
+}
+
+export interface DashboardClientMetricsSummary {
+  soats_expedidos: number;
+  recargas_total: number;
+  consumo_total: number;
+  ticket_promedio: number;
+}
+
+export interface DashboardClientMetricsByTypeItem {
+  tipo_moto: TipoMotoCCEnum;
+  cantidad: number;
+  total: number;
+}
+
+export interface DashboardClientMetricsDailyItem {
+  fecha: string;
+  soats_expedidos: number;
+  consumo: number;
+  recargas: number;
+}
+
+export interface DashboardClientMetrics {
+  preset: MetricsPreset | string;
+  start_date: string;
+  end_date: string;
+  resumen: DashboardClientMetricsSummary;
+  por_tipo: DashboardClientMetricsByTypeItem[];
+  serie_diaria: DashboardClientMetricsDailyItem[];
+}

@@ -6,6 +6,9 @@ import type {
   SoatExpedido,
   SoatExpedidoCreate,
   DashboardStats,
+  DashboardMetrics,
+  DashboardClientMetrics,
+  MetricsPreset,
 } from '../types/index.js';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -195,6 +198,24 @@ export const soatAPI = {
   // Dashboard
   getStats: async (): Promise<DashboardStats> => {
     const response = await apiClient.get<DashboardStats>('/api/dashboard/stats');
+    return response.data;
+  },
+
+  getMetrics: async (params?: {
+    preset?: MetricsPreset;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<DashboardMetrics> => {
+    const response = await apiClient.get<DashboardMetrics>('/api/dashboard/metrics', { params });
+    return response.data;
+  },
+
+  getClientMetrics: async (params?: {
+    preset?: MetricsPreset;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<DashboardClientMetrics> => {
+    const response = await apiClient.get<DashboardClientMetrics>('/api/dashboard/metrics-client', { params });
     return response.data;
   },
 };
