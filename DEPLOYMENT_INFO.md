@@ -196,7 +196,8 @@ systemctl restart nginx     # Reiniciar Nginx
 DATABASE_URL=postgresql://soat_user:[DB_PASSWORD]@localhost/soat_manager_db
 SECRET_KEY=[CONFIGURAR_SECRET_KEY_SEGURA]
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+ACCESS_TOKEN_EXPIRE_MINUTES=43200
+APP_TIMEZONE=America/Bogota
 ```
 
 ### Frontend (.env.production)
@@ -228,6 +229,40 @@ VITE_API_URL=https://soatmanager.com
 
 ## Procedimientos de Actualización
 
+### Runbook Rápido (Recomendado)
+
+```bash
+# 1) Entrar al proyecto + backup
+cd /var/www/soat-manager-hero || exit 1
+mkdir -p backups
+sudo -u postgres pg_dump soat_manager_db > backups/backup_$(date +%F_%H-%M-%S).sql
+
+# 2) Actualizar código
+git fetch origin
+git checkout main
+git pull origin main
+
+# 3) Backend
+cd /var/www/soat-manager-hero/backend || exit 1
+source venv/bin/activate
+pip install -r requirements.txt
+grep -q '^APP_TIMEZONE=' .env && \
+  sed -i 's/^APP_TIMEZONE=.*/APP_TIMEZONE=America\/Bogota/' .env || \
+  echo 'APP_TIMEZONE=America/Bogota' >> .env
+systemctl restart soat-gunicorn.service
+systemctl status soat-gunicorn.service --no-pager -l
+
+# 4) Frontend
+cd /var/www/soat-manager-hero/frontend || exit 1
+npm install
+rm -rf dist
+npm run build
+chown -R www-data:www-data dist
+nginx -t
+systemctl reload nginx
+systemctl status nginx --no-pager -l
+```
+
 ### 1. Actualizar Backend
 
 ```bash
@@ -238,9 +273,6 @@ git pull
 cd backend
 source venv/bin/activate
 pip install -r requirements.txt
-
-# Si hay cambios en base de datos
-python init_db.py
 
 # Reiniciar servicio
 systemctl restart soat-gunicorn.service
@@ -263,9 +295,38 @@ systemctl reload nginx
 ### 3. Actualizar Base de Datos
 
 ```bash
-cd /var/www/soat-manager-hero/backend
-source venv/bin/activate
-python init_db.py  # Solo para recrear tablas
+# En producción NO ejecutar init_db.py en actualizaciones normales.
+# Usar migraciones controladas o scripts específicos.
+# init_db.py solo aplica para primera instalación o entornos nuevos.
+```
+
+## Verificación Post-Deploy
+
+```bash
+# App web
+curl -I https://soatmanager.com
+
+# Backend vivo (endpoint público)
+curl -I https://soatmanager.com/api/bolsa/saldo
+
+# Dashboard stats requiere GET + token (HEAD devuelve 405 por diseño)
+TOKEN="JWT_ADMIN"
+curl -s -H "Authorization: Bearer $TOKEN" https://soatmanager.com/api/dashboard/stats
+```
+
+## Higiene Git en Producción
+
+```bash
+cd /var/www/soat-manager-hero
+
+# Limpiar cambios accidentales en lockfiles
+git restore -- frontend/package-lock.json
+
+# Excluir archivos locales operativos de git status (solo servidor)
+printf "backups/\nfrontend/.env.production\n" >> .git/info/exclude
+
+# Verificar estado limpio
+git status -sb
 ```
 
 ## Mantenimiento
@@ -380,3 +441,58 @@ netstat -tlnp
 ---
 
 **Última actualización**: 2025-12-27
+
+
+## Nota operativa - Deploy 2026-06-28 (métricas cliente)
+
+Durante este despliegue, el build de frontend falló inicialmente por dependencia faltante:
+
+- Error: `Cannot find module 'recharts'`
+- Acción correctiva en VPS: `npm install recharts`
+- Luego: `npm run build` completó correctamente.
+
+### Prevención para próximos deploys
+- Verificar que `recharts` esté versionado en `frontend/package.json` y `frontend/package-lock.json` antes de hacer push.
+- Mantener el flujo estándar:
+  1. `npm install`
+  2. `npm run build`
+  3. `nginx -t && systemctl reload nginx`
+
+### Resultado del deploy
+- Web: `HTTP 200`
+- API: operativa
+- Backend (`soat-gunicorn`): activo y estable
+
+## Troubleshooting PWA (Install no aparece)
+
+Síntoma típico: `manifest.webmanifest`, `sw.js` o iconos responden `text/html` (fallback de SPA) en lugar de sus archivos reales.
+
+### Validación rápida
+
+```bash
+curl -I https://soatmanager.com/manifest.webmanifest
+curl -I https://soatmanager.com/sw.js
+curl -I https://soatmanager.com/icon-192.png
+curl -I https://soatmanager.com/icon-512.png
+```
+
+Esperado:
+- `manifest.webmanifest`: `200` (mime de manifest u octet-stream)
+- `sw.js`: `200` y `content-type: application/javascript`
+- `icon-192.png` y `icon-512.png`: `200` y `image/png`
+
+### Remediación (si faltan recursos)
+
+```bash
+cd /var/www/soat-manager-hero/frontend
+npm install
+npm run generate:pwa-icons
+rm -rf dist
+npm run build
+chown -R www-data:www-data dist
+nginx -t && systemctl reload nginx
+```
+
+Luego limpiar caché PWA del navegador:
+- DevTools -> Application -> Storage -> **Clear site data**
+- Cerrar pestaña y abrir de nuevo `https://soatmanager.com`
